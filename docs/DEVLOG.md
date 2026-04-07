@@ -4,3 +4,4 @@
 - 2026-04-02 | Tinh chinh giao dien trang chu (DoMinhThu-0104)
 - 2026-04-04 | Refactor service xu ly cong viec (letantai281005)
 - 2026-04-05 | Bo sung ghi chu phat trien (tranhongduc2k4)
+- 2026-04-07 | Sua loi hien thi nho (Terence-0310)
