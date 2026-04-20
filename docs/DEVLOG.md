@@ -12,3 +12,4 @@
 - 2026-04-15 | Cap nhat ke hoach sprint (Terence-0310)
 - 2026-04-17 | Ghi chu hop nhom (Terence-0310)
 - 2026-04-18 | Toi uu bo cuc lich (DoMinhThu-0104)
+- 2026-04-20 | Bo sung kiem thu thu cong (letantai281005)
