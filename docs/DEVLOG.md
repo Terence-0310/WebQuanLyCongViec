@@ -15,3 +15,4 @@
 - 2026-04-20 | Bo sung kiem thu thu cong (letantai281005)
 - 2026-04-21 | Cap nhat huong dan cai dat (tranhongduc2k4)
 - 2026-04-23 | Sua chinh ta tai lieu (Terence-0310)
+- 2026-04-25 | Them checklist tinh nang (Terence-0310)
