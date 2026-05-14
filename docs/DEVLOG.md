@@ -27,3 +27,4 @@
 - 2026-05-09 | Sua loi hien thi nho (Terence-0310)
 - 2026-05-11 | Cai thien hieu nang truy van (Terence-0310)
 - 2026-05-12 | Cap nhat README (DoMinhThu-0104)
+- 2026-05-14 | Them mo ta API (letantai281005)
