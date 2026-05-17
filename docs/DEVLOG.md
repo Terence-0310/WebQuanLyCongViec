@@ -29,3 +29,4 @@
 - 2026-05-12 | Cap nhat README (DoMinhThu-0104)
 - 2026-05-14 | Them mo ta API (letantai281005)
 - 2026-05-15 | Chinh sua CSS nut bam (tranhongduc2k4)
+- 2026-05-17 | Cap nhat ke hoach sprint (Terence-0310)
