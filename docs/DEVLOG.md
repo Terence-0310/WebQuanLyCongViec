@@ -31,3 +31,4 @@
 - 2026-05-15 | Chinh sua CSS nut bam (tranhongduc2k4)
 - 2026-05-17 | Cap nhat ke hoach sprint (Terence-0310)
 - 2026-05-19 | Ghi chu hop nhom (Terence-0310)
+- 2026-05-20 | Toi uu bo cuc lich (DoMinhThu-0104)
