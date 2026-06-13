@@ -46,3 +46,4 @@
 - 2026-06-08 | Bo sung ghi chu phat trien (tranhongduc2k4)
 - 2026-06-10 | Sua loi hien thi nho (Terence-0310)
 - 2026-06-12 | Cai thien hieu nang truy van (Terence-0310)
+- 2026-06-13 | Cap nhat README (DoMinhThu-0104)
