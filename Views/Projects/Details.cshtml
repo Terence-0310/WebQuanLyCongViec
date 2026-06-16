@@ -1,0 +1,144 @@
+@model ProjectDetailsViewModel
+@{
+    ViewData["Title"] = Model.Project.Name;
+    var p = Model.Project;
+}
+
+@section TopbarAction {
+    <div class="page-actions">
+        <a class="btn btn-secondary" asp-action="Edit" asp-route-id="@p.Id">Sửa project</a>
+        <a class="btn btn-primary" asp-controller="Tasks" asp-action="Create" asp-route-projectId="@p.Id">Thêm task</a>
+    </div>
+}
+
+<div class="card mb-2">
+    <div class="card-body">
+        <p class="muted mb-2">@p.Workspace?.Name • @(string.IsNullOrEmpty(p.Description) ? "Không có mô tả" : p.Description)</p>
+        <div class="detail-meta text-sm muted">
+            <span>Tiến độ: @Model.CompletedTasks/@Model.TotalTasks task hoàn thành</span>
+            <span>@Model.ProgressPercent%</span>
+        </div>
+        <div class="progress"><div class="progress-bar" style="width:@Model.ProgressPercent%"></div></div>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <!-- Pages ghi chú -->
+    <div class="card">
+        <div class="card-body">
+            <div class="page-header">
+                <h3 class="mt-0 mb-0">Ghi chú</h3>
+                <a class="btn btn-secondary btn-sm" asp-controller="Pages" asp-action="Create" asp-route-projectId="@p.Id">Thêm ghi chú</a>
+            </div>
+            @if (!Model.Pages.Any())
+            {
+                <p class="muted">Chưa có ghi chú nào.</p>
+            }
+            else
+            {
+                foreach (var note in Model.Pages)
+                {
+                    <div class="comment">
+                        <a class="comment-author" asp-controller="Pages" asp-action="Details" asp-route-id="@note.Id">@note.Title</a>
+                        <div class="comment-time">Cập nhật @note.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="card">
+        <div class="card-body">
+            <div class="page-header">
+                <h3 class="mt-0 mb-0">Task</h3>
+                <a class="btn btn-secondary btn-sm" asp-controller="Tasks" asp-action="Board" asp-route-projectId="@p.Id">Xem Kanban</a>
+            </div>
+            @if (!Model.Tasks.Any())
+            {
+                <p class="muted">Chưa có task nào.</p>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr><th>Task</th><th>Người nhận</th><th>Trạng thái</th><th>Hạn</th></tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var t in Model.Tasks)
+                        {
+                            <tr>
+                                <td><a asp-controller="Tasks" asp-action="Details" asp-route-id="@t.Id">@t.Title</a></td>
+                                <td>
+                                    @if (t.Assignee != null)
+                                    {
+                                        <div class="cell-user"><partial name="_Avatar" model="@t.Assignee.FullName" /><span class="text-sm">@t.Assignee.FullName</span></div>
+                                    }
+                                    else { <span class="muted text-sm">—</span> }
+                                </td>
+                                <td><span class="tag @t.Status.CssClass()">@t.Status.Label()</span></td>
+                                <td class="muted text-sm">@(t.DueDate?.ToString("dd/MM") ?? "—")</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-2 mt-2">
+    <!-- Thành viên project -->
+    <div class="card">
+        <div class="card-body">
+            <h3 class="mt-0">Thành viên</h3>
+            @if (!Model.Members.Any())
+            {
+                <p class="muted">Chưa có thành viên.</p>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead><tr><th>Họ tên</th><th>Vai trò</th></tr></thead>
+                        <tbody>
+                        @foreach (var m in Model.Members)
+                        {
+                            <tr>
+                                <td><div class="cell-user"><partial name="_Avatar" model="@(m.User?.FullName ?? string.Empty)" /><span>@m.User?.FullName</span></div></td>
+                                <td class="muted text-sm">@m.Role</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Hoạt động gần đây -->
+    <div class="card">
+        <div class="card-body">
+            <h3 class="mt-0">Hoạt động gần đây</h3>
+            @if (!Model.RecentActivities.Any())
+            {
+                <p class="muted">Chưa có hoạt động nào.</p>
+            }
+            else
+            {
+                foreach (var a in Model.RecentActivities)
+                {
+                    <div class="feed-item">
+                        <partial name="_Avatar" model="@(a.User?.FullName ?? string.Empty)" />
+                        <div class="feed-body">
+                            <div class="feed-text"><b>@a.User?.FullName</b> @a.Description</div>
+                            <div class="feed-time">@a.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>

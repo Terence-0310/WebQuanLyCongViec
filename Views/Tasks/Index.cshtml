@@ -1,0 +1,91 @@
+@model TaskListViewModel
+@{
+    ViewData["Title"] = "Tasks";
+}
+
+@section TopbarAction {
+    <div class="page-actions">
+        <a class="btn btn-secondary" asp-action="Timeline">Lịch ngày</a>
+        <a class="btn btn-secondary" asp-action="Board">Xem Kanban</a>
+        <a class="btn btn-primary" asp-action="Create">Tạo task</a>
+    </div>
+}
+
+<div class="card mb-2">
+    <div class="card-body">
+        <form method="get" asp-action="Index" class="form-row" style="align-items:end;">
+            <div class="form-group mb-0">
+                <label class="form-label">Tìm theo tên</label>
+                <input type="text" name="q" value="@Model.Search" class="form-control" placeholder="Nhập từ khóa..." />
+            </div>
+            <div class="form-group mb-0">
+                <label class="form-label">Lọc theo project</label>
+                <select name="projectId" class="form-control" asp-items="Model.ProjectOptions">
+                    <option value="">Tất cả project</option>
+                </select>
+            </div>
+            <div class="form-group mb-0">
+                <label class="form-label">Lọc theo trạng thái</label>
+                <select name="status" class="form-control">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="@((int)TaskStatus.Todo)" selected="@(Model.Status == TaskStatus.Todo)">Cần làm</option>
+                    <option value="@((int)TaskStatus.Doing)" selected="@(Model.Status == TaskStatus.Doing)">Đang làm</option>
+                    <option value="@((int)TaskStatus.Done)" selected="@(Model.Status == TaskStatus.Done)">Hoàn thành</option>
+                </select>
+            </div>
+            <div class="form-group mb-0">
+                <button type="submit" class="btn btn-secondary">Áp dụng</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Tasks.Any())
+{
+    <div class="card"><div class="empty">
+        <div class="empty-title">Không có task</div>
+        <p>Chưa có task nào phù hợp với bộ lọc hiện tại.</p>
+    </div></div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Tiêu đề</th>
+                    <th>Project</th>
+                    <th>Người thực hiện</th>
+                    <th>Ưu tiên</th>
+                    <th>Trạng thái</th>
+                    <th>Hạn chót</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var t in Model.Tasks)
+            {
+                <tr>
+                    <td><a asp-action="Details" asp-route-id="@t.Id">@t.Title</a></td>
+                    <td class="muted text-sm">@t.Project?.Name</td>
+                    <td>
+                        @if (t.Assignee != null)
+                        {
+                            <div class="cell-user"><partial name="_Avatar" model="@t.Assignee.FullName" /><span class="text-sm">@t.Assignee.FullName</span></div>
+                        }
+                        else { <span class="muted text-sm">—</span> }
+                    </td>
+                    <td><span class="tag @t.Priority.CssClass()">@t.Priority.Label()</span></td>
+                    <td><span class="tag @t.Status.CssClass()">@t.Status.Label()</span></td>
+                    <td class="text-sm">
+                        @if (t.DueDate.HasValue)
+                        {
+                            <span class="@(t.IsOverdue ? "tag tag-overdue" : "muted")">@t.DueDate.Value.ToString("dd/MM/yyyy")</span>
+                        }
+                        else { <span class="muted">—</span> }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
