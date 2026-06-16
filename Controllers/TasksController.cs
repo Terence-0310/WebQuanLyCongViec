@@ -11,44 +11,55 @@ namespace Cetee.Controllers;
 public class TasksController : BaseController
 {
     private readonly ITaskService _tasks;
+    private readonly IUserService _users;
 
-    public TasksController(ITaskService tasks) => _tasks = tasks;
-
-    // GET /Tasks  -> view dạng List, có lọc theo project và status
-    public async Task<IActionResult> Index(int? projectId, TaskStatus? status, string? q)
+    public TasksController(ITaskService tasks, IUserService users)
     {
-        var tasks = await _tasks.GetForUserAsync(CurrentUserId, IsAdmin, projectId, status, q);
+        _tasks = tasks;
+        _users = users;
+    }
+
+    // GET /Tasks  -> view dạng List, có lọc theo project, status và người thực hiện
+    public async Task<IActionResult> Index(int? projectId, TaskStatus? status, string? q, int? employeeId)
+    {
+        var scope = await _users.ResolveScopeAsync(CurrentUserId, CurrentRole, employeeId);
+        var tasks = await _tasks.GetForUserAsync(CurrentUserId, IsAdmin, projectId, status, q, scope.AssigneeFilter);
         var model = new TaskListViewModel
         {
             Tasks = tasks,
             ProjectId = projectId,
             Status = status,
             Search = q,
-            ProjectOptions = await ProjectOptionsAsync(projectId)
+            ProjectOptions = await ProjectOptionsAsync(projectId),
+            Scope = scope
         };
         return View(model);
     }
 
     // GET /Tasks/Board -> view dạng Kanban 3 cột
-    public async Task<IActionResult> Board(int? projectId)
+    public async Task<IActionResult> Board(int? projectId, int? employeeId)
     {
-        var tasks = await _tasks.GetForUserAsync(CurrentUserId, IsAdmin, projectId, null);
+        var scope = await _users.ResolveScopeAsync(CurrentUserId, CurrentRole, employeeId);
+        var tasks = await _tasks.GetForUserAsync(CurrentUserId, IsAdmin, projectId, null, null, scope.AssigneeFilter);
         var model = new KanbanViewModel
         {
             ProjectId = projectId,
             ProjectOptions = await ProjectOptionsAsync(projectId),
             Todo = tasks.Where(t => t.Status == TaskStatus.Todo).ToList(),
             Doing = tasks.Where(t => t.Status == TaskStatus.Doing).ToList(),
-            Done = tasks.Where(t => t.Status == TaskStatus.Done).ToList()
+            Done = tasks.Where(t => t.Status == TaskStatus.Done).ToList(),
+            Scope = scope
         };
         return View(model);
     }
 
     // GET /Tasks/Timeline -> lịch ngày kéo thả (mặc định hôm nay)
-    public async Task<IActionResult> Timeline(DateTime? date)
+    public async Task<IActionResult> Timeline(DateTime? date, int? employeeId)
     {
         var day = (date ?? DateTime.Today).Date;
-        var model = await _tasks.GetTimelineAsync(CurrentUserId, IsAdmin, day);
+        var scope = await _users.ResolveScopeAsync(CurrentUserId, CurrentRole, employeeId);
+        var model = await _tasks.GetTimelineAsync(CurrentUserId, IsAdmin, day, scope.AssigneeFilter);
+        model.Scope = scope;
         return View(model);
     }
 

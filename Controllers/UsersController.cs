@@ -21,18 +21,27 @@ public class UsersController : BaseController
     }
 
     [HttpGet]
-    public IActionResult Create() => View(new CreateUserViewModel());
+    public async Task<IActionResult> Create()
+    {
+        var model = new CreateUserViewModel { ManagerOptions = await _users.GetManagerCandidatesAsync() };
+        return View(model);
+    }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateUserViewModel model)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+        {
+            model.ManagerOptions = await _users.GetManagerCandidatesAsync();
+            return View(model);
+        }
 
         var (ok, error) = await _users.CreateAsync(model);
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error!);
+            model.ManagerOptions = await _users.GetManagerCandidatesAsync();
             return View(model);
         }
 
@@ -45,6 +54,7 @@ public class UsersController : BaseController
     {
         var vm = await _users.GetForEditAsync(id, CurrentUserId);
         if (vm is null) return NotFound();
+        vm.ManagerOptions = await _users.GetManagerCandidatesAsync();
         return View(vm);
     }
 
@@ -57,12 +67,17 @@ public class UsersController : BaseController
             ModelState.AddModelError(nameof(model.NewPassword), "Mật khẩu tối thiểu 6 ký tự.");
 
         model.IsSelf = model.Id == CurrentUserId;
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+        {
+            model.ManagerOptions = await _users.GetManagerCandidatesAsync();
+            return View(model);
+        }
 
         var (ok, error) = await _users.UpdateAsync(model, CurrentUserId);
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error!);
+            model.ManagerOptions = await _users.GetManagerCandidatesAsync();
             return View(model);
         }
 

@@ -18,6 +18,8 @@ public class DashboardViewModel
     public IEnumerable<TaskItem> RecentTasks { get; set; } = new List<TaskItem>();
     public IEnumerable<ActivityLog> RecentActivities { get; set; } = new List<ActivityLog>();
 
+    public EmployeeScopeResult? Scope { get; set; }
+
     /// <summary>Phần trăm task hoàn thành trên tổng số task.</summary>
     public int CompletionPercent => TotalTasks == 0 ? 0 : (int)Math.Round(DoneTasks * 100.0 / TotalTasks);
 }

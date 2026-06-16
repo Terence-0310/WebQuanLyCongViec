@@ -24,6 +24,7 @@
                     <th>Người dùng</th>
                     <th>Email</th>
                     <th>Vai trò</th>
+                    <th>Quản lý</th>
                     <th>Ngày tạo</th>
                     <th>Dữ liệu</th>
                     <th class="text-right">Thao tác</th>
@@ -41,15 +42,20 @@
                         </td>
                         <td class="muted">@u.Email</td>
                         <td>
-                            @if (u.IsAdmin)
+                            @switch (u.RoleName)
                             {
-                                <span class="tag tag-doing plain">Admin</span>
-                            }
-                            else
-                            {
-                                <span class="tag tag-todo plain">User</span>
+                                case "Admin":
+                                    <span class="tag tag-high plain">Admin</span>
+                                    break;
+                                case "Manager":
+                                    <span class="tag tag-doing plain">Manager</span>
+                                    break;
+                                default:
+                                    <span class="tag tag-todo plain">User</span>
+                                    break;
                             }
                         </td>
+                        <td class="muted text-sm">@(u.ManagerName ?? "—")</td>
                         <td class="muted text-sm">@u.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
                         <td class="muted text-sm">@u.OwnedWorkspaceCount workspace • @u.AssignedTaskCount task</td>
                         <td class="text-right">

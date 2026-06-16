@@ -19,6 +19,12 @@ public class User
     public int RoleId { get; set; }
     public Role Role { get; set; } = null!;
 
+    // Người quản lý trực tiếp (nếu là nhân viên trực thuộc một Manager). Null = không
+    // trực thuộc ai (Manager/Admin hoặc người dùng độc lập dùng cho cá nhân).
+    public int? ManagerId { get; set; }
+    public User? Manager { get; set; }
+    public ICollection<User> Subordinates { get; set; } = new List<User>();
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation

@@ -12,11 +12,21 @@
         ? "background:#e8eaf0;"
         : $"background:conic-gradient(#94a3b8 0deg {Deg(aTodo)}, var(--primary) {Deg(aTodo)} {Deg(aDoing)}, var(--green) {Deg(aDoing)} 360deg);";
     int Pct(int part) => total == 0 ? 0 : (int)Math.Round(part * 100.0 / total);
+
+    var viewingName = Model.Scope?.SelectedId > 0
+        ? Model.Scope.Visible.FirstOrDefault(u => u.Id == Model.Scope.SelectedId)?.FullName
+        : null;
+}
+
+@section TopbarAction {
+    <div class="page-actions">
+        <partial name="_EmployeePicker" model="Model.Scope" />
+    </div>
 }
 
 <div class="page-head">
     <h2>Dashboard</h2>
-    <div class="sub">Tổng quan công việc của bạn hôm nay</div>
+    <div class="sub">@(viewingName != null ? $"Thống kê công việc của {viewingName}" : "Tổng quan công việc hôm nay")</div>
 </div>
 
 <!-- Thẻ thống kê -->

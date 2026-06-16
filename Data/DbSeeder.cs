@@ -24,6 +24,9 @@ public static class DbSeeder
             db.Roles.Add(adminRole);
         }
 
+        if (!await db.Roles.AnyAsync(r => r.Name == "Manager"))
+            db.Roles.Add(new Role { Name = "Manager" });
+
         if (!await db.Roles.AnyAsync(r => r.Name == "User"))
             db.Roles.Add(new Role { Name = "User" });
 
