@@ -1,0 +1,111 @@
+@model TaskDetailsViewModel
+@{
+    ViewData["Title"] = Model.Task.Title;
+    var t = Model.Task;
+}
+
+@section TopbarAction {
+    <div class="page-actions">
+        <a class="btn btn-secondary" asp-action="Edit" asp-route-id="@t.Id">Sửa</a>
+        <form class="inline-form" asp-action="Delete" asp-route-id="@t.Id" method="post"
+              onsubmit="return confirm('Xóa task này?');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger">Xóa</button>
+        </form>
+    </div>
+}
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-body">
+            <h3 class="mt-0">Thông tin task</h3>
+            <div class="detail-meta">
+                <span class="tag @t.Status.CssClass()">@t.Status.Label()</span>
+                <span class="tag @t.Priority.CssClass()">@t.Priority.Label()</span>
+                @if (t.IsOverdue) { <span class="tag tag-overdue">Quá hạn</span> }
+            </div>
+
+            <table class="table" style="border:none;">
+                <tbody>
+                    <tr><th>Project</th><td><a asp-controller="Projects" asp-action="Details" asp-route-id="@t.ProjectId">@t.Project?.Name</a></td></tr>
+                    <tr><th>Người thực hiện</th><td>@(t.Assignee?.FullName ?? "Chưa giao")</td></tr>
+                    <tr><th>Hạn chót</th><td>@(t.DueDate?.ToString("dd/MM/yyyy") ?? "—")</td></tr>
+                    <tr><th>Tạo lúc</th><td>@t.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td></tr>
+                </tbody>
+            </table>
+
+            <hr class="divider" />
+            <h4>Mô tả</h4>
+            @if (string.IsNullOrWhiteSpace(t.Description))
+            {
+                <p class="muted">(Không có mô tả)</p>
+            }
+            else
+            {
+                <div style="white-space: pre-wrap;">@t.Description</div>
+            }
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h3 class="mt-0">Bình luận</h3>
+
+            @if (!Model.Comments.Any())
+            {
+                <p class="muted">Chưa có bình luận nào.</p>
+            }
+            else
+            {
+                foreach (var c in Model.Comments)
+                {
+                    <div class="comment">
+                        <partial name="_Avatar" model="@(c.User?.FullName ?? string.Empty)" />
+                        <div class="comment-body">
+                            <div class="comment-head">
+                                <span class="comment-author">@c.User?.FullName</span>
+                                <span class="comment-time">@c.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                            <div style="white-space: pre-wrap;">@c.Content</div>
+                        </div>
+                    </div>
+                }
+            }
+
+            <hr class="divider" />
+            <form asp-action="AddComment" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@t.Id" />
+                <div class="form-group">
+                    <label class="form-label" for="newComment">Thêm bình luận</label>
+                    <textarea class="form-control" id="newComment" name="newComment" rows="3"
+                              placeholder="Nhập bình luận..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Gửi bình luận</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-2">
+    <div class="card-body">
+        <h3 class="mt-0">Hoạt động của task</h3>
+        @if (!Model.RecentActivities.Any())
+        {
+            <p class="muted">Chưa có hoạt động nào.</p>
+        }
+        else
+        {
+            foreach (var a in Model.RecentActivities)
+            {
+                <div class="feed-item">
+                    <partial name="_Avatar" model="@(a.User?.FullName ?? string.Empty)" />
+                    <div class="feed-body">
+                        <div class="feed-text"><b>@a.User?.FullName</b> @a.Description</div>
+                        <div class="feed-time">@a.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

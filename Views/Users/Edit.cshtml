@@ -1,0 +1,69 @@
+@model EditUserViewModel
+@{
+    ViewData["Title"] = "Sửa người dùng";
+}
+
+<div class="card form-narrow">
+    <div class="card-body">
+        <form asp-action="Edit" method="post">
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="IsSelf" />
+
+            <div class="form-group">
+                <label class="form-label" asp-for="FullName"></label>
+                <input class="form-control" asp-for="FullName" autofocus />
+                <span class="field-error" asp-validation-for="FullName"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="Email"></label>
+                <input class="form-control" asp-for="Email" />
+                <span class="field-error" asp-validation-for="Email"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="Role"></label>
+                @if (Model.IsSelf)
+                {
+                    <input type="hidden" asp-for="Role" />
+                    <input class="form-control" value="@Model.Role" disabled />
+                    <span class="field-error muted">Không thể tự đổi vai trò của chính mình.</span>
+                }
+                else
+                {
+                    <select class="form-control" asp-for="Role">
+                        <option value="User">User (Nhân viên / cá nhân)</option>
+                        <option value="Manager">Manager (Quản lý)</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                    <span class="field-error" asp-validation-for="Role"></span>
+                }
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="ManagerId"></label>
+                <select class="form-control" asp-for="ManagerId">
+                    <option value="">— Không trực thuộc ai —</option>
+                    @foreach (var m in Model.ManagerOptions)
+                    {
+                        if (m.Id == Model.Id) { continue; }
+                        <option value="@m.Id">@m.FullName (@m.Role?.Name)</option>
+                    }
+                </select>
+                <span class="field-error muted">Chọn nếu đây là nhân viên trực thuộc một quản lý.</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="NewPassword"></label>
+                <input class="form-control" asp-for="NewPassword" placeholder="Để trống nếu không đổi mật khẩu" />
+                <span class="field-error" asp-validation-for="NewPassword"></span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                <a class="btn btn-secondary" asp-action="Index">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>

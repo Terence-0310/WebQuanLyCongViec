@@ -1,0 +1,42 @@
+@using TaskStatusEnum = Cetee.Models.TaskStatus
+@model IEnumerable<Project>
+@{
+    ViewData["Title"] = "Projects";
+}
+
+@section TopbarAction {
+    <a class="btn btn-primary" asp-action="Create">Tạo project</a>
+}
+
+@if (!Model.Any())
+{
+    <div class="card"><div class="empty">
+        <div class="empty-title">Chưa có project</div>
+        <p>Tạo project trong một workspace để bắt đầu thêm task và ghi chú.</p>
+        <a class="btn btn-primary mt-1" asp-action="Create">Tạo project</a>
+    </div></div>
+}
+else
+{
+    <div class="grid grid-3">
+        @foreach (var p in Model)
+        {
+            var total = p.Tasks.Count;
+            var done = p.Tasks.Count(t => t.Status == TaskStatusEnum.Done);
+            var percent = total == 0 ? 0 : (int)Math.Round(done * 100.0 / total);
+            <div class="card">
+                <div class="card-body">
+                    <div class="card-title">
+                        <a asp-action="Details" asp-route-id="@p.Id">@p.Name</a>
+                    </div>
+                    <p class="muted text-sm">@p.Workspace?.Name</p>
+                    <div class="detail-meta text-sm muted">
+                        <span>Tiến độ: @done/@total task</span>
+                        <span>@percent%</span>
+                    </div>
+                    <div class="progress"><div class="progress-bar" style="width:@percent%"></div></div>
+                </div>
+            </div>
+        }
+    </div>
+}

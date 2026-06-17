@@ -1,0 +1,3 @@
+@model string
+@* Avatar dạng chữ cái, màu chọn ổn định theo tên *@
+<span class="avatar avatar-c@(DisplayHelpers.AvatarColor(Model))" title="@Model">@DisplayHelpers.Initials(Model)</span>

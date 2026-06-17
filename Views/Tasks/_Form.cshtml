@@ -1,0 +1,60 @@
+@model TaskFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+<input type="hidden" asp-for="Id" />
+
+<div class="form-group">
+    <label class="form-label" asp-for="Title"></label>
+    <input class="form-control" asp-for="Title" autofocus />
+    <span class="field-error" asp-validation-for="Title"></span>
+</div>
+
+<div class="form-group">
+    <label class="form-label" asp-for="Description"></label>
+    <textarea class="form-control" asp-for="Description" rows="3"></textarea>
+    <span class="field-error" asp-validation-for="Description"></span>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label class="form-label" asp-for="ProjectId"></label>
+        <select class="form-control" asp-for="ProjectId" asp-items="Model.ProjectOptions">
+            <option value="">-- Chọn project --</option>
+        </select>
+        <span class="field-error" asp-validation-for="ProjectId"></span>
+    </div>
+    <div class="form-group">
+        <label class="form-label" asp-for="AssigneeEmail"></label>
+        <input class="form-control" asp-for="AssigneeEmail" placeholder="Nhập email người nhận..." />
+        <span class="field-error" asp-validation-for="AssigneeEmail"></span>
+    </div>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label class="form-label" asp-for="Priority"></label>
+        <select class="form-control" asp-for="Priority">
+            <option value="@((int)TaskPriority.Low)">Thấp</option>
+            <option value="@((int)TaskPriority.Medium)">Trung bình</option>
+            <option value="@((int)TaskPriority.High)">Cao</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label" asp-for="Status"></label>
+        <select class="form-control" asp-for="Status">
+            <option value="@((int)TaskStatus.Todo)">Cần làm</option>
+            <option value="@((int)TaskStatus.Doing)">Đang làm</option>
+            <option value="@((int)TaskStatus.Done)">Hoàn thành</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label" asp-for="DueDate"></label>
+        <input class="form-control" asp-for="DueDate" type="date" />
+        <span class="field-error" asp-validation-for="DueDate"></span>
+    </div>
+    <div class="form-group">
+        <label class="form-label" asp-for="DurationMinutes"></label>
+        <input class="form-control" asp-for="DurationMinutes" type="number" min="5" max="480" step="5" />
+        <span class="field-error" asp-validation-for="DurationMinutes"></span>
+    </div>
+</div>

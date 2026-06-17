@@ -1,0 +1,29 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / VS Code (giữ lại nếu cần, mặc định bỏ qua thư mục cá nhân)
+.idea/
+.vscode/
+
+# Build / publish
+[Dd]ebug/
+[Rr]elease/
+publish/
+*.publishsettings
+
+# EF / DB cục bộ
+*.mdf
+*.ldf
+
+# Logs & tạm
+*.log
+*.tmp

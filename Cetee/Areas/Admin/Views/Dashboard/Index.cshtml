@@ -1,0 +1,257 @@
+@using System.Globalization
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+
+    // Tính góc cho biểu đồ donut (CSS conic-gradient).
+    int total = Model.TotalTasks;
+    string Deg(double v) => v.ToString("0.##", CultureInfo.InvariantCulture) + "deg";
+    double aTodo = total == 0 ? 0 : Model.TodoTasks * 360.0 / total;
+    double aDoing = total == 0 ? 0 : aTodo + Model.DoingTasks * 360.0 / total;
+    var donutStyle = total == 0
+        ? "background:#e8eaf0;"
+        : $"background:conic-gradient(#94a3b8 0deg {Deg(aTodo)}, var(--primary) {Deg(aTodo)} {Deg(aDoing)}, var(--green) {Deg(aDoing)} 360deg);";
+    int Pct(int part) => total == 0 ? 0 : (int)Math.Round(part * 100.0 / total);
+
+    var viewingName = Model.Scope?.SelectedId > 0
+        ? Model.Scope.Visible.FirstOrDefault(u => u.Id == Model.Scope.SelectedId)?.FullName
+        : null;
+}
+
+@section TopbarAction {
+    <div class="page-actions">
+        <partial name="_EmployeePicker" model="Model.Scope" />
+    </div>
+}
+
+<div class="page-head">
+    <h2>Dashboard</h2>
+    <div class="sub">@(viewingName != null ? $"Thống kê công việc của {viewingName}" : "Tổng quan công việc hôm nay")</div>
+</div>
+
+<!-- Thẻ thống kê -->
+<div class="grid grid-4 mb-2">
+    <div class="card stat-card">
+        <div class="stat-top">
+            <div>
+                <div class="stat-label">Tổng công việc</div>
+                <div class="stat-value">@Model.TotalTasks</div>
+            </div>
+            <div class="stat-ic ic-blue">
+                <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 11l2.5 2.5L16 8"/></svg>
+            </div>
+        </div>
+        <div class="stat-sub">@Model.TodoTasks cần làm</div>
+    </div>
+
+    <div class="card stat-card">
+        <div class="stat-top">
+            <div>
+                <div class="stat-label">Hoàn thành</div>
+                <div class="stat-value">@Model.CompletionPercent%</div>
+            </div>
+            <div class="stat-ic ic-green">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+        </div>
+        <div class="stat-sub up">@Model.DoneTasks / @Model.TotalTasks task</div>
+    </div>
+
+    <div class="card stat-card">
+        <div class="stat-top">
+            <div>
+                <div class="stat-label">Đang thực hiện</div>
+                <div class="stat-value">@Model.DoingTasks</div>
+            </div>
+            <div class="stat-ic ic-amber">
+                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+            </div>
+        </div>
+        <div class="stat-sub">Đang được xử lý</div>
+    </div>
+
+    <div class="card stat-card">
+        <div class="stat-top">
+            <div>
+                <div class="stat-label">Quá hạn</div>
+                <div class="stat-value">@Model.OverdueTasks</div>
+            </div>
+            <div class="stat-ic ic-red">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+        </div>
+        <div class="stat-sub @(Model.OverdueTasks > 0 ? "down" : "")">Cần xử lý sớm</div>
+    </div>
+</div>
+
+<!-- Tiến độ theo project + Phân bố công việc -->
+<div class="grid grid-3-2 mb-2">
+    <div class="card">
+        <div class="card-body">
+            <div class="card-head">
+                <h3>Tiến độ theo project</h3>
+                <a class="link-more" asp-controller="Projects" asp-action="Index">Xem tất cả</a>
+            </div>
+            @if (!Model.RecentProjects.Any())
+            {
+                <p class="muted">Chưa có project nào.</p>
+            }
+            else
+            {
+                foreach (var p in Model.RecentProjects)
+                {
+                    var tt = p.Tasks.Count;
+                    var dd = p.Tasks.Count(t => t.Status == TaskStatus.Done);
+                    var pct = tt == 0 ? 0 : (int)Math.Round(dd * 100.0 / tt);
+                    <div class="proj-row">
+                        <div class="proj-row-head">
+                            <div>
+                                <div class="proj-name">
+                                    <a asp-controller="Projects" asp-action="Details" asp-route-id="@p.Id">@p.Name</a>
+                                </div>
+                                <div class="proj-meta">@tt task • @p.Members.Count thành viên</div>
+                            </div>
+                            <div class="proj-pct">@pct%</div>
+                        </div>
+                        <div class="progress"><div class="progress-bar" style="width:@pct%"></div></div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="card-head"><h3>Phân bố công việc</h3></div>
+            <div class="donut-wrap">
+                <div class="donut" style="@donutStyle">
+                    <div class="donut-center">
+                        <div class="num">@Model.TotalTasks</div>
+                        <div class="lbl">công việc</div>
+                    </div>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background:#94a3b8"></span>
+                        <span class="legend-name">Cần làm</span>
+                        <span class="legend-val">@Pct(Model.TodoTasks)%</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background:var(--primary)"></span>
+                        <span class="legend-name">Đang làm</span>
+                        <span class="legend-val">@Pct(Model.DoingTasks)%</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background:var(--green)"></span>
+                        <span class="legend-name">Hoàn thành</span>
+                        <span class="legend-val">@Pct(Model.DoneTasks)%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Công việc gần đây + Dự án nổi bật -->
+<div class="grid grid-3-2 mb-2">
+    <div class="card">
+        <div class="card-body">
+            <div class="card-head">
+                <h3>Công việc gần đây</h3>
+                <a class="link-more" asp-controller="Tasks" asp-action="Index">Xem tất cả</a>
+            </div>
+            @if (!Model.RecentTasks.Any())
+            {
+                <p class="muted">Chưa có công việc nào.</p>
+            }
+            else
+            {
+                <table class="table table-flush">
+                    <thead><tr><th>Công việc</th><th>Dự án</th><th>Người giao</th><th>Hạn chót</th><th>Trạng thái</th></tr></thead>
+                    <tbody>
+                    @foreach (var t in Model.RecentTasks)
+                    {
+                        <tr>
+                            <td><a asp-controller="Tasks" asp-action="Details" asp-route-id="@t.Id">@t.Title</a></td>
+                            <td class="muted">@t.Project?.Name</td>
+                            <td>
+                                <div class="cell-user">
+                                    @if (t.Assignee != null)
+                                    {
+                                        <partial name="_Avatar" model="@t.Assignee.FullName" />
+                                    }
+                                    else { <span class="muted text-sm">—</span> }
+                                </div>
+                            </td>
+                            <td class="text-sm">
+                                @if (t.DueDate.HasValue)
+                                {
+                                    <span class="@(t.IsOverdue ? "tag tag-overdue" : "muted")">@t.DueDate.Value.ToString("dd/MM/yyyy")</span>
+                                }
+                                else { <span class="muted">—</span> }
+                            </td>
+                            <td><span class="tag @t.Status.CssClass()">@t.Status.Label()</span></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="card-head">
+                <h3>Dự án nổi bật</h3>
+                <a class="link-more" asp-controller="Projects" asp-action="Index">Xem tất cả</a>
+            </div>
+            @if (!Model.RecentProjects.Any())
+            {
+                <p class="muted">Chưa có project.</p>
+            }
+            else
+            {
+                foreach (var p in Model.RecentProjects)
+                {
+                    var tt = p.Tasks.Count;
+                    var dd = p.Tasks.Count(t => t.Status == TaskStatus.Done);
+                    var pct = tt == 0 ? 0 : (int)Math.Round(dd * 100.0 / tt);
+                    <div class="proj-row">
+                        <div class="proj-row-head">
+                            <div class="proj-name">
+                                <a asp-controller="Projects" asp-action="Details" asp-route-id="@p.Id">@p.Name</a>
+                            </div>
+                            <div class="proj-pct">@pct%</div>
+                        </div>
+                        <div class="proj-meta mb-0" style="margin-bottom:8px;">@tt task • @p.Members.Count thành viên</div>
+                        <div class="progress"><div class="progress-bar green" style="width:@pct%"></div></div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Hoạt động gần đây -->
+<div class="card">
+    <div class="card-body">
+        <div class="card-head"><h3>Hoạt động gần đây</h3></div>
+        @if (!Model.RecentActivities.Any())
+        {
+            <p class="muted">Chưa có hoạt động nào.</p>
+        }
+        else
+        {
+            foreach (var a in Model.RecentActivities)
+            {
+                <div class="feed-item">
+                    <partial name="_Avatar" model="@(a.User?.FullName ?? string.Empty)" />
+                    <div class="feed-body">
+                        <div class="feed-text"><b>@a.User?.FullName</b> @a.Description</div>
+                        <div class="feed-time">@a.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

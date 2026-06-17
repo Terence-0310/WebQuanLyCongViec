@@ -1,0 +1,16 @@
+@model PageFormViewModel
+@{
+    ViewData["Title"] = "Thêm ghi chú";
+}
+
+<div class="card form-narrow">
+    <div class="card-body">
+        <form asp-action="Create" method="post">
+            <partial name="_Form" model="Model" />
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Tạo ghi chú</button>
+                <a class="btn btn-secondary" asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>

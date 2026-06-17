@@ -1,0 +1,79 @@
+@model KanbanViewModel
+@{
+    ViewData["Title"] = "Kanban";
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+
+    // Hàm cục bộ render một cột Kanban (async vì có tag helper bên trong).
+    async Task RenderColumn(string title, TaskStatus status, List<TaskItem> items)
+    {
+        <div class="kanban-col">
+            <div class="kanban-col-head">
+                <span>@title</span>
+                <span class="kanban-count">@items.Count</span>
+            </div>
+            @foreach (var t in items)
+            {
+                <div class="kanban-card">
+                    <a class="kanban-card-title" asp-action="Details" asp-route-id="@t.Id">@t.Title</a>
+                    <div class="kanban-card-meta">
+                        <span class="tag @t.Priority.CssClass()">@t.Priority.Label()</span>
+                        @if (t.DueDate.HasValue)
+                        {
+                            <span class="@(t.IsOverdue ? "tag tag-overdue" : "muted text-sm")">@t.DueDate.Value.ToString("dd/MM")</span>
+                        }
+                        @if (t.IsOverdue)
+                        {
+                            <span class="tag tag-overdue">Overdue</span>
+                        }
+                    </div>
+                    <div class="proj-meta mb-0" style="margin-bottom:8px;">@t.Project?.Name</div>
+                    <div class="kanban-card-foot">
+                        @if (t.Assignee != null)
+                        {
+                            <div class="cell-user"><partial name="_Avatar" model="@t.Assignee.FullName" /><span class="text-sm muted">@t.Assignee.FullName</span></div>
+                        }
+                        else { <span class="text-sm muted">Chưa giao</span> }
+                    </div>
+                    <!-- Đổi trạng thái bằng dropdown, tự submit khi chọn -->
+                    <form asp-action="ChangeStatus" method="post" class="kanban-move-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@t.Id" />
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        <select name="status" class="form-control form-control-sm" onchange="this.form.submit()">
+                            <option value="@((int)TaskStatus.Todo)" selected="@(t.Status == TaskStatus.Todo)">Cần làm</option>
+                            <option value="@((int)TaskStatus.Doing)" selected="@(t.Status == TaskStatus.Doing)">Đang làm</option>
+                            <option value="@((int)TaskStatus.Done)" selected="@(t.Status == TaskStatus.Done)">Hoàn thành</option>
+                        </select>
+                    </form>
+                </div>
+            }
+        </div>
+    }
+}
+
+@section TopbarAction {
+    <div class="page-actions">
+        <partial name="_EmployeePicker" model="Model.Scope" />
+        <a class="btn btn-secondary" asp-action="Index">Xem dạng List</a>
+        <a class="btn btn-primary" asp-action="Create" asp-route-projectId="@Model.ProjectId">Tạo task</a>
+    </div>
+}
+
+<div class="card mb-2">
+    <div class="card-body">
+        <form method="get" asp-action="Board" class="form-row" style="align-items:end;">
+            <div class="form-group mb-0">
+                <label class="form-label">Lọc theo project</label>
+                <select name="projectId" class="form-control" asp-items="Model.ProjectOptions" onchange="this.form.submit()">
+                    <option value="">Tất cả project</option>
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="kanban">
+    @{ await RenderColumn("Cần làm", TaskStatus.Todo, Model.Todo); }
+    @{ await RenderColumn("Đang làm", TaskStatus.Doing, Model.Doing); }
+    @{ await RenderColumn("Hoàn thành", TaskStatus.Done, Model.Done); }
+</div>

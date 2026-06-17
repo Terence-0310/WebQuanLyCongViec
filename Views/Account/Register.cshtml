@@ -1,0 +1,56 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng ký - Cetee</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div class="auth-wrap">
+    <div class="auth-card">
+        <div class="auth-brand"><span class="brand-logo">C</span> Cetee</div>
+        <div class="auth-sub">Tạo tài khoản mới</div>
+
+        <form asp-action="Register" method="post">
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="FullName"></label>
+                <input class="form-control" asp-for="FullName" autofocus />
+                <span class="field-error" asp-validation-for="FullName"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="Email"></label>
+                <input class="form-control" asp-for="Email" />
+                <span class="field-error" asp-validation-for="Email"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="Password"></label>
+                <input class="form-control" asp-for="Password" />
+                <span class="field-error" asp-validation-for="Password"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="ConfirmPassword"></label>
+                <input class="form-control" asp-for="ConfirmPassword" />
+                <span class="field-error" asp-validation-for="ConfirmPassword"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Đăng ký</button>
+        </form>
+
+        <div class="auth-alt">
+            Đã có tài khoản? <a asp-action="Login">Đăng nhập</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

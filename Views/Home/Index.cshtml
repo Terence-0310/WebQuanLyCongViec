@@ -1,0 +1,692 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Quản lý công việc hiệu quả";
+}
+
+@section Styles {
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Bootstrap 5 CSS CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <!-- AOS (Animate On Scroll) CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <!-- SwiperJS CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+    <!-- CSS Tùy Chỉnh cho Landing Page -->
+    <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+}
+
+<div class="landing-body">
+    
+    <!-- Navbar (Glassmorphic) -->
+    <nav class="navbar navbar-expand-lg landing-navbar glass-nav">
+        <div class="container">
+            <a class="landing-navbar-brand" asp-controller="Home" asp-action="Index">
+                <div class="logo-icon">C</div>
+                <span>Cetee</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#landingNavbar">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="landingNavbar">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-3">
+                    <li class="nav-item">
+                        <a class="nav-link landing-nav-link" href="#why-us">Tại sao chọn Cetee</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link landing-nav-link" href="#features">Tính năng</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link landing-nav-link" href="#preview">Giao diện</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link landing-nav-link" href="#faq">Câu hỏi thường gặp</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-3 align-items-center">
+                    <a class="btn-premium btn-premium-secondary py-2 px-4" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                    <a class="btn-premium btn-premium-primary py-2 px-4" asp-controller="Account" asp-action="Register">Đăng ký miễn phí</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6 text-start" data-aos="fade-right" data-aos-duration="1000">
+                    <h1 class="hero-title">
+                        Quản lý công việc <br/>
+                        <span class="text-gradient">hiệu quả hơn</span> <br/>
+                        mỗi ngày
+                    </h1>
+                    <p class="hero-subtitle">
+                        Cetee là nền tảng quản lý dự án và công việc nhóm hiện đại, giúp bạn tối ưu năng suất lao động, theo dõi tiến độ thời gian thực và đạt mục tiêu nhanh hơn.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a class="btn-premium btn-premium-primary" asp-controller="Account" asp-action="Register">
+                            Bắt đầu miễn phí <i class="bi bi-arrow-up-right"></i>
+                        </a>
+                        <a class="btn-premium btn-premium-secondary" href="#preview">
+                            Xem Demo <i class="bi bi-play-circle-fill"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-6" data-aos="zoom-in" data-aos-duration="1200">
+                    <div class="hero-mockup-wrapper">
+                        <div class="mockup-window">
+                            <div class="mockup-header">
+                                <span class="mockup-dot mockup-dot-red"></span>
+                                <span class="mockup-dot mockup-dot-yellow"></span>
+                                <span class="mockup-dot mockup-dot-green"></span>
+                                <div class="mockup-address">cetee.vn/dashboard</div>
+                            </div>
+                            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop" alt="Dashboard Preview" class="img-fluid" style="width:100%; height:auto; display:block; filter: brightness(0.96);"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section: Tại sao chọn Cetee -->
+    <section id="why-us" class="section-padding">
+        <div class="container">
+            <div class="text-center" data-aos="fade-up" data-aos-duration="800">
+                <span class="section-tag">Giá trị cốt lõi</span>
+                <h2 class="section-title">Tại sao chọn hệ thống của chúng tôi?</h2>
+                <p class="section-subtitle">Giải pháp giúp gỡ bỏ sự chồng chéo, quản lý thời gian khoa học và tăng hiệu suất làm việc của nhóm lên 150%.</p>
+            </div>
+            <div class="row g-4 mt-2">
+                <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
+                    <div class="glass-card p-4 h-100 text-start">
+                        <div class="why-us-icon mb-4"><i class="bi bi-list-task"></i></div>
+                        <h4 class="why-us-title">Quản lý dễ dàng</h4>
+                        <p class="text-muted text-sm mb-0">Thiết kế công việc trực quan, lưu trữ tập trung, tìm kiếm và phân loại thông tin nhanh chóng.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
+                    <div class="glass-card p-4 h-100 text-start">
+                        <div class="why-us-icon mb-4"><i class="bi bi-graph-up"></i></div>
+                        <h4 class="why-us-title">Theo dõi tiến độ</h4>
+                        <p class="text-muted text-sm mb-0">Biểu đồ tiến độ trực quan, đo lường tỷ lệ hoàn thành công việc chi tiết theo thời gian thực.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
+                    <div class="glass-card p-4 h-100 text-start">
+                        <div class="why-us-icon mb-4"><i class="bi bi-people"></i></div>
+                        <h4 class="why-us-title">Làm việc nhóm</h4>
+                        <p class="text-muted text-sm mb-0">Gán việc nhanh chóng, bình luận thảo luận tức thời, tương tác mượt mà giữa các thành viên.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="400">
+                    <div class="glass-card p-4 h-100 text-start">
+                        <div class="why-us-icon mb-4"><i class="bi bi-shield-lock"></i></div>
+                        <h4 class="why-us-title">Phân quyền người dùng</h4>
+                        <p class="text-muted text-sm mb-0">Kiểm soát truy cập Role-based rõ ràng giữa Khách vãng lai, Người dùng và Quản trị viên.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section: 6 Tính năng nổi bật -->
+    <section id="features" class="section-padding bg-light">
+        <div class="container">
+            <div class="text-center" data-aos="fade-up" data-aos-duration="800">
+                <span class="section-tag">Tính năng hệ thống</span>
+                <h2 class="section-title">Trải nghiệm những tính năng vượt trội</h2>
+                <p class="section-subtitle">Đầy đủ bộ công cụ quản lý chuyên nghiệp từ giao diện người dùng đến các giao thức bảo mật nâng cao.</p>
+            </div>
+            <div class="row g-4 mt-2">
+                <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="100">
+                    <div class="glass-card p-4 text-start">
+                        <div class="feature-icon-box"><i class="fa-solid fa-folder-open"></i></div>
+                        <h4 class="fw-bold mb-3">Quản lý dự án</h4>
+                        <p class="text-muted text-sm mb-0">Tạo dự án cá nhân hoặc nhóm, phân chia các thành viên tham gia, sắp xếp tiến trình khoa học.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="200">
+                    <div class="glass-card p-4 text-start">
+                        <div class="feature-icon-box"><i class="fa-solid fa-tasks"></i></div>
+                        <h4 class="fw-bold mb-3">Quản lý công việc</h4>
+                        <p class="text-muted text-sm mb-0">Tạo nhiệm vụ, gán người thực hiện, đặt hạn chót (deadline) và quản lý mức độ ưu tiên linh hoạt.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="300">
+                    <div class="glass-card p-4 text-start">
+                        <div class="feature-icon-box"><i class="bi bi-kanban"></i></div>
+                        <h4 class="fw-bold mb-3">Theo dõi tiến độ</h4>
+                        <p class="text-muted text-sm mb-0">Kanban Board tương tác mượt mà giúp cập nhật trạng thái công việc nhanh chóng bằng kéo thả.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="400">
+                    <div class="glass-card p-4 text-start">
+                        <div class="feature-icon-box"><i class="fa-solid fa-chart-line"></i></div>
+                        <h4 class="fw-bold mb-3">Dashboard thống kê</h4>
+                        <p class="text-muted text-sm mb-0">Biểu đồ tròn trực quan hiển thị tỷ lệ công việc To Do, Doing, Done để đánh giá hiệu suất lập tức.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="500">
+                    <div class="glass-card p-4 text-start">
+                        <div class="feature-icon-box"><i class="bi bi-code-slash"></i></div>
+                        <h4 class="fw-bold mb-3">REST API mạnh mẽ</h4>
+                        <p class="text-muted text-sm mb-0">Cung cấp các endpoints CRUD cho Tasks, Projects, Users phục vụ kết nối với các ứng dụng khác.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4" data-aos="zoom-in" data-aos-delay="600">
+                    <div class="glass-card p-4 text-start">
+                        <div class="feature-icon-box"><i class="bi bi-clock-history"></i></div>
+                        <h4 class="fw-bold mb-3">Bảo mật Token JWT</h4>
+                        <p class="text-muted text-sm mb-0">Hệ thống bảo mật API an toàn bằng JSON Web Token cùng ASP.NET Core Identity quản lý mật khẩu.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="statistics-section" id="stats-trigger">
+        <div class="container">
+            <div class="row g-4 justify-content-center">
+                <div class="col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="100">
+                    <div class="stat-box">
+                        <div class="stat-number" id="tasks-counter" data-target="1000">0</div>
+                        <div class="stat-title">Công việc được quản lý</div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-box">
+                        <div class="stat-number" id="users-counter" data-target="500">0</div>
+                        <div class="stat-title">Người dùng tin cậy</div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6" data-aos="fade-up" data-aos-delay="300">
+                    <div class="stat-box">
+                        <div class="stat-number" id="satisfaction-counter" data-target="95">0</div>
+                        <div class="stat-title">Mức độ hài lòng (%)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Preview Section (Mockup) -->
+    <section id="preview" class="section-padding">
+        <div class="container">
+            <div class="text-center" data-aos="fade-up" data-aos-duration="800">
+                <span class="section-tag">Trực quan hóa</span>
+                <h2 class="section-title">Giao diện quản trị hiện đại</h2>
+                <p class="section-subtitle">Minh họa thực tế trải nghiệm làm việc trực quan ngay khi bạn đăng nhập vào hệ thống.</p>
+            </div>
+            
+            <div class="row g-5 mt-2">
+                <!-- Mockup cột trái: Kanban + Task List -->
+                <div class="col-lg-8" data-aos="fade-right" data-aos-duration="1000">
+                    <div class="mockup-window h-100">
+                        <div class="mockup-header">
+                            <span class="mockup-dot mockup-dot-red"></span>
+                            <span class="mockup-dot mockup-dot-yellow"></span>
+                            <span class="mockup-dot mockup-dot-green"></span>
+                            <div class="mockup-address">cetee.vn/tasks/board</div>
+                        </div>
+                        <div class="mockup-body text-start">
+                            <div class="row g-3">
+                                <!-- Column 1: To Do -->
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-white rounded-3 border">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <span class="fw-bold text-secondary text-sm">Cần làm</span>
+                                            <span class="badge bg-secondary rounded-pill">2</span>
+                                        </div>
+                                        <div class="p-3 mb-2 rounded-2 border bg-light">
+                                            <span class="badge bg-danger-subtle text-danger mb-2">Khẩn cấp</span>
+                                            <h6 class="fw-bold mb-1 text-sm">Viết tài liệu API</h6>
+                                            <p class="text-muted text-xs mb-0">Hạn chót: 25/06</p>
+                                        </div>
+                                        <div class="p-3 rounded-2 border bg-light">
+                                            <span class="badge bg-secondary-subtle text-secondary mb-2">Bình thường</span>
+                                            <h6 class="fw-bold mb-1 text-sm">Thiết kế Mockup UI</h6>
+                                            <p class="text-muted text-xs mb-0">Hạn chót: 30/06</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Column 2: Doing -->
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-white rounded-3 border">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <span class="fw-bold text-primary text-sm">Đang làm</span>
+                                            <span class="badge bg-primary rounded-pill">1</span>
+                                        </div>
+                                        <div class="p-3 rounded-2 border bg-light" style="border-left: 3px solid var(--landing-primary) !important;">
+                                            <span class="badge bg-primary-subtle text-primary mb-2">Quan trọng</span>
+                                            <h6 class="fw-bold mb-1 text-sm">Tích hợp JWT Token</h6>
+                                            <p class="text-muted text-xs mb-0">Tiến độ: 75%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Column 3: Done -->
+                                <div class="col-md-4">
+                                    <div class="p-3 bg-white rounded-3 border">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <span class="fw-bold text-success text-sm">Hoàn thành</span>
+                                            <span class="badge bg-success rounded-pill">1</span>
+                                        </div>
+                                        <div class="p-3 rounded-2 border bg-light" style="opacity: 0.7;">
+                                            <span class="badge bg-success-subtle text-success mb-2">Xong</span>
+                                            <h6 class="fw-bold mb-1 text-sm">Thiết kế DB Schema</h6>
+                                            <p class="text-muted text-xs mb-0">Hoàn thành 100%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mockup cột phải: Project cards & Progress chart (Chart.js) -->
+                <div class="col-lg-4" data-aos="fade-left" data-aos-duration="1000">
+                    <div class="mockup-window h-100">
+                        <div class="mockup-header">
+                            <span class="mockup-dot mockup-dot-red"></span>
+                            <span class="mockup-dot mockup-dot-yellow"></span>
+                            <span class="mockup-dot mockup-dot-green"></span>
+                            <div class="mockup-address">cetee.vn/dashboard/stats</div>
+                        </div>
+                        <div class="mockup-body text-start bg-white d-flex flex-column gap-4">
+                            <div>
+                                <h6 class="fw-bold text-secondary mb-3">TIẾN ĐỘ DỰ ÁN (Bar Chart)</h6>
+                                <div class="chart-container">
+                                    <canvas id="projectsBarChart"></canvas>
+                                </div>
+                            </div>
+                            <hr class="my-1 text-muted" style="opacity: 0.1;"/>
+                            <div>
+                                <h6 class="fw-bold text-secondary mb-3">TRẠNG THÁI CÔNG VIỆC (Doughnut)</h6>
+                                <div class="chart-container doughnut-chart-container">
+                                    <canvas id="tasksDoughnutChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section: SwiperJS -->
+    <section class="section-padding bg-light">
+        <div class="container">
+            <div class="text-center" data-aos="fade-up" data-aos-duration="800">
+                <span class="section-tag">Đánh giá</span>
+                <h2 class="section-title">Khách hàng nói gì về Cetee?</h2>
+                <p class="section-subtitle">Được tin dùng bởi các bạn sinh viên, nhân viên văn phòng và các nhà quản lý dự án công nghệ.</p>
+            </div>
+            
+            <div class="swiper testimonials-swiper scroll-animate" data-aos="fade-up" data-aos-duration="1000">
+                <div class="swiper-wrapper testimonials-container">
+                    
+                    <!-- Slide 1 -->
+                    <div class="swiper-slide">
+                        <div class="glass-card p-4 testimonial-card text-start">
+                            <div class="testimonial-rating">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            </div>
+                            <p class="testimonial-text">
+                                "Nhờ Cetee, nhóm nghiên cứu khoa học của mình luôn phân công công việc rõ ràng và không bao giờ bị trễ hạn nộp báo cáo. Giao diện cực dễ sử dụng!"
+                            </p>
+                            <div class="testimonial-author">
+                                <div class="testimonial-avatar">MH</div>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-sm">Minh Hoàng</h6>
+                                    <small class="text-muted">Sinh viên Đại học Bách Khoa</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Slide 2 -->
+                    <div class="swiper-slide">
+                        <div class="glass-card p-4 testimonial-card text-start">
+                            <div class="testimonial-rating">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            </div>
+                            <p class="testimonial-text">
+                                "REST API và JWT Authentication hoạt động rất mượt mà. Chúng tôi dễ dàng kết nối dữ liệu dự án từ Cetee với hệ thống báo cáo nội bộ của công ty."
+                            </p>
+                            <div class="testimonial-author">
+                                <div class="testimonial-avatar">TL</div>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-sm">Tuấn Linh</h6>
+                                    <small class="text-muted">Trưởng phòng Kỹ thuật - SaaS Tech</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Slide 3 -->
+                    <div class="swiper-slide">
+                        <div class="glass-card p-4 testimonial-card text-start">
+                            <div class="testimonial-rating">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                            </div>
+                            <p class="testimonial-text">
+                                "Trực quan hóa Kanban và Biểu đồ là điểm mình thích nhất. Mình có thể theo dõi được ngay tiến độ của các nhân viên trực thuộc trong thời gian thực."
+                            </p>
+                            <div class="testimonial-author">
+                                <div class="testimonial-avatar">MA</div>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-sm">Mai Anh</h6>
+                                    <small class="text-muted">Quản lý Dự án - Creative Agency</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                <!-- Swiper pagination bullets -->
+                <div class="swiper-pagination"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="section-padding">
+        <div class="container">
+            <div class="text-center" data-aos="fade-up" data-aos-duration="800">
+                <span class="section-tag">Hỗ trợ</span>
+                <h2 class="section-title">Câu hỏi thường gặp</h2>
+                <p class="section-subtitle">Giải đáp các thắc mắc phổ biến nhất của người dùng khi bắt đầu tìm hiểu hệ thống.</p>
+            </div>
+            
+            <div class="row justify-content-center mt-2">
+                <div class="col-lg-8" data-aos="fade-up" data-aos-duration="1000">
+                    <div class="accordion faq-accordion text-start" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingOne">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                    Hệ thống Cetee có miễn phí hoàn toàn không?
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Đúng vậy! Phiên bản hiện tại của Cetee hoàn toàn miễn phí cho các cá nhân và nhóm làm việc để quản lý công việc và dự án không giới hạn số lượng.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingTwo">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                    Hệ thống có hỗ trợ hiển thị tốt trên điện thoại di động không?
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Có. Cetee được thiết kế tối ưu hóa hiển thị responsive hoàn toàn dựa trên Bootstrap 5. Bạn có thể dễ dàng quản lý công việc, dự án hoặc xem báo cáo ngay trên điện thoại di động hoặc máy tính bảng của mình.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingThree">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                    Tôi có thể tạo dự án nhóm và phân công công việc cho thành viên khác không?
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Hoàn toàn được. Bạn có thể tạo dự án, thêm các thành viên trong hệ thống vào dự án, sau đó gán người thực hiện (Assignee), thiết lập mức ưu tiên và hạn chót cho từng công việc cụ thể.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-box" data-aos="zoom-in" data-aos-duration="1000">
+                <h2 class="cta-title">Sẵn sàng quản lý công việc hiệu quả hơn?</h2>
+                <p class="cta-subtitle">Đăng ký tài khoản Cetee ngay hôm nay để trải nghiệm quy trình làm việc hiện đại, minh bạch và chuyên nghiệp.</p>
+                <a class="btn-premium btn-premium-primary px-5 py-3 fs-5" asp-controller="Account" asp-action="Register">
+                    Đăng ký ngay <i class="bi bi-person-plus-fill ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Landing Footer -->
+    <footer class="landing-footer">
+        <div class="container">
+            <div class="row g-5 text-start">
+                <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="footer-brand d-flex align-items-center gap-2">
+                        <div class="logo-icon text-white" style="background:var(--landing-gradient-1); width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;">C</div>
+                        <span class="fw-bold">Cetee</span>
+                    </div>
+                    <p class="text-muted text-sm">
+                        Website quản lý công việc và dự án cá nhân/nhóm giúp hiện đại hóa quy trình làm việc và tối ưu năng suất lao động.
+                    </p>
+                </div>
+                <div class="col-sm-6 col-lg-4" data-aos="fade-up" data-aos-delay="200">
+                    <h6 class="fw-bold text-uppercase text-sm mb-3">Sản phẩm</h6>
+                    <ul class="footer-link-group">
+                        <li><a href="#why-us">Tại sao chọn chúng tôi</a></li>
+                        <li><a href="#features">Tính năng chính</a></li>
+                        <li><a href="#preview">Giao diện mẫu</a></li>
+                    </ul>
+                </div>
+                <div class="col-sm-6 col-lg-4" data-aos="fade-up" data-aos-delay="300">
+                    <h6 class="fw-bold text-uppercase text-sm mb-3">Tài liệu API</h6>
+                    <ul class="footer-link-group">
+                        <li><a href="#">Tài liệu tích hợp REST API</a></li>
+                        <li><a href="#">Bảo mật Token JWT</a></li>
+                        <li><a href="#">Postman Collection</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div class="row">
+                    <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
+                        &copy; 2026 Cetee. Bảo lưu mọi quyền.
+                    </div>
+                    <div class="col-md-6 text-center text-md-end">
+                        Phát triển trên nền tảng ASP.NET Core MVC & SQL Server
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</div>
+
+@section Scripts {
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- AOS JS -->
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    
+    <!-- SwiperJS JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            
+            // --- 1. Khởi tạo AOS (Animate On Scroll) ---
+            AOS.init({
+                offset: 120,
+                duration: 800,
+                easing: 'ease-out-cubic',
+                once: true
+            });
+
+            // --- 2. Khởi tạo SwiperJS cho Đánh giá (Testimonials) ---
+            const swiper = new Swiper('.testimonials-swiper', {
+                slidesPerView: 1,
+                spaceBetween: 20,
+                loop: true,
+                pagination: {
+                    el: '.swiper-pagination',
+                    clickable: true,
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 1.5,
+                        spaceBetween: 20,
+                    },
+                    768: {
+                        slidesPerView: 2,
+                        spaceBetween: 30,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 30,
+                    },
+                }
+            });
+
+            // --- 3. Khởi tạo Chart.js Biểu đồ Tiến độ Dự án (Bar Chart) ---
+            const barCtx = document.getElementById('projectsBarChart').getContext('2d');
+            const projectsBarChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Website Cetee', 'Xây dựng API REST', 'Thiết kế Mockup', 'Hệ thống DB'],
+                    datasets: [{
+                        label: 'Tiến độ hoàn thành (%)',
+                        data: [80, 100, 45, 100],
+                        backgroundColor: [
+                            'rgba(51, 97, 255, 0.85)',
+                            'rgba(22, 163, 106, 0.85)',
+                            'rgba(217, 138, 11, 0.85)',
+                            'rgba(139, 92, 246, 0.85)'
+                        ],
+                        borderColor: [
+                            'rgb(51, 97, 255)',
+                            'rgb(22, 163, 106)',
+                            'rgb(217, 138, 11)',
+                            'rgb(139, 92, 246)'
+                        ],
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { font: { family: 'Plus Jakarta Sans', size: 10 } },
+                            grid: { display: false }
+                        },
+                        x: {
+                            ticks: { font: { family: 'Plus Jakarta Sans', size: 10, weight: 'bold' } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // --- 4. Khởi tạo Chart.js Biểu đồ Trạng thái Công việc (Doughnut Chart) ---
+            const doughnutCtx = document.getElementById('tasksDoughnutChart').getContext('2d');
+            const tasksDoughnutChart = new Chart(doughnutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hoàn thành', 'Trễ hạn', 'Mới'],
+                    datasets: [{
+                        data: [75, 15, 10],
+                        backgroundColor: [
+                            'rgb(22, 163, 106)',
+                            'rgb(229, 72, 77)',
+                            'rgb(51, 97, 255)'
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: { family: 'Plus Jakarta Sans', size: 11, weight: '500' },
+                                boxWidth: 12
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+
+            // --- 5. Bộ đếm số liệu động khi cuộn trang (CountUp Animation) ---
+            const statsSection = document.getElementById('stats-trigger');
+            let hasCounted = false;
+
+            const countUpObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !hasCounted) {
+                        hasCounted = true;
+                        animateCounter('tasks-counter', 1000, '+');
+                        animateCounter('users-counter', 500, '+');
+                        animateCounter('satisfaction-counter', 95, '%');
+                    }
+                });
+            }, { threshold: 0.2 });
+
+            countUpObserver.observe(statsSection);
+
+            function animateCounter(id, target, suffix) {
+                const el = document.getElementById(id);
+                const duration = 2000; // 2 giây
+                const startTime = performance.now();
+
+                function update(currentTime) {
+                    const elapsedTime = currentTime - startTime;
+                    const progress = Math.min(elapsedTime / duration, 1);
+                    
+                    // Thao tác easing để chạy chậm dần khi gần đích
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    const currentValue = Math.floor(easeProgress * target);
+                    
+                    el.textContent = currentValue + suffix;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    } else {
+                        el.textContent = target + suffix;
+                    }
+                }
+
+                requestAnimationFrame(update);
+            }
+
+            // --- 6. Thay đổi độ cao và viền Navbar khi cuộn trang ---
+            const navbar = document.querySelector('.landing-navbar');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 50) {
+                    navbar.style.boxShadow = "0 8px 30px rgba(0, 0, 0, 0.06)";
+                    navbar.style.padding = "10px 0";
+                    navbar.style.background = "rgba(255, 255, 255, 0.85)";
+                } else {
+                    navbar.style.boxShadow = "none";
+                    navbar.style.padding = "16px 0";
+                    navbar.style.background = "rgba(255, 255, 255, 0.75)";
+                }
+            });
+        });
+    </script>
+}
