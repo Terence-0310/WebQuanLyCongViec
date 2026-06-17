@@ -1,6 +1,7 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Cetee.Data;
+using Cetee.Models;
 using Cetee.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,17 +10,53 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// --- Authentication bằng cookie ---
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+// --- Cấu hình Email (SMTP/Gmail) và JWT ---
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+// --- ASP.NET Core Identity (khóa int) ---
+builder.Services.AddIdentity<User, Role>(options =>
     {
-        options.LoginPath = "/Account/Login";
-        options.LogoutPath = "/Account/Logout";
-        options.AccessDeniedPath = "/Account/Login";
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
-        options.SlidingExpiration = true;
+        // Chính sách mật khẩu gọn cho đồ án (tối thiểu 6 ký tự).
+        options.Password.RequiredLength = 6;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireDigit = false;
+        options.User.RequireUniqueEmail = true;
+        options.SignIn.RequireConfirmedAccount = false;
+    })
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
+
+// Giữ định dạng băm PBKDF2 cũ (để mật khẩu hiện có vẫn đăng nhập được) và sinh claim theo app.
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher>();
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<User>, AppUserClaimsPrincipalFactory>();
+
+// Đường dẫn cho cookie đăng nhập của Identity.
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+    options.AccessDeniedPath = "/Home/Index";
+    options.ExpireTimeSpan = TimeSpan.FromDays(7);
+    options.SlidingExpiration = true;
+});
+
+// Đăng nhập Google (nếu đã cấu hình) — đăng nhập qua cookie ngoài của Identity.
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
+{
+    builder.Services.AddAuthentication().AddGoogle(options =>
+    {
+        options.ClientId = googleClientId;
+        options.ClientSecret = googleClientSecret;
+        options.SignInScheme = IdentityConstants.ExternalScheme; // callback mặc định: /signin-google
+        options.Scope.Add("email");
+        options.Scope.Add("profile");
     });
-builder.Services.AddAuthorization();
+}
 
 // --- Đăng ký các service nghiệp vụ ---
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -32,6 +69,9 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddSingleton<IJwtService, JwtService>();
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 
 builder.Services.AddControllersWithViews();
 
@@ -41,8 +81,9 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
-    await DbSeeder.SeedAsync(db, hasher);
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+    await DbSeeder.SeedAsync(db, roleManager, userManager);
 }
 
 if (!app.Environment.IsDevelopment())

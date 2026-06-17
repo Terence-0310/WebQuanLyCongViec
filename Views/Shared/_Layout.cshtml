@@ -31,10 +31,13 @@
 
             <div class="sidebar-section">Tổng quan</div>
             <nav class="sidebar-nav">
-                <a class="nav-item @Active("Dashboard")" asp-controller="Dashboard" asp-action="Index">
-                    <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
-                    <span class="nav-label">Dashboard</span>
-                </a>
+                @if (Roles.CanAccessDashboard(role))
+                {
+                    <a class="nav-item @Active("Dashboard")" asp-controller="Dashboard" asp-action="Index">
+                        <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                        <span class="nav-label">Dashboard</span>
+                    </a>
+                }
                 <a class="nav-item @Active("Workspaces")" asp-controller="Workspaces" asp-action="Index">
                     <svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
                     <span class="nav-label">Workspaces</span>
@@ -56,7 +59,7 @@
                     <span class="nav-label">Notifications</span>
                     @await Component.InvokeAsync("NotificationBadge")
                 </a>
-                @if (role == "Admin")
+                @if (role == Roles.SuperAdmin || role == Roles.Admin || role == Roles.Manager)
                 {
                     <a class="nav-item @Active("Users")" asp-controller="Users" asp-action="Index">
                         <svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -75,7 +78,7 @@
                 <partial name="_Avatar" model="@fullName" />
                 <div class="user-meta">
                     <div class="user-name">@fullName</div>
-                    <div class="user-role">@role</div>
+                    <div class="user-role">@Roles.Label(role)</div>
                 </div>
                 <form asp-controller="Account" asp-action="Logout" method="post">
                     @Html.AntiForgeryToken()
@@ -102,7 +105,7 @@
                     <div class="topbar-user">
                         <div class="user-meta">
                             <div class="user-name">@fullName</div>
-                            <div class="user-role">@role</div>
+                            <div class="user-role">@Roles.Label(role)</div>
                         </div>
                         <partial name="_Avatar" model="@fullName" />
                     </div>

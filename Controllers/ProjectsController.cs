@@ -21,16 +21,38 @@ public class ProjectsController : BaseController
     // GET /Projects
     public async Task<IActionResult> Index()
     {
-        var list = await _projects.GetForUserAsync(CurrentUserId, IsAdmin);
+        var list = await _projects.GetForUserAsync(CurrentUserId, CanSeeAllData);
         return View(list);
     }
 
     // GET /Projects/Details/{id}
     public async Task<IActionResult> Details(int id)
     {
-        var model = await _projects.GetDetailsAsync(id, CurrentUserId, IsAdmin);
+        var model = await _projects.GetDetailsAsync(id, CurrentUserId, CurrentRole);
         if (model is null) return NotFound();
         return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddMember(int projectId, int userId)
+    {
+        if (!await _projects.AddMemberAsync(projectId, userId, CurrentUserId, CurrentRole))
+            TempData["Error"] = "Không thể thêm thành viên (chưa thuộc workspace hoặc không có quyền).";
+        else
+            TempData["Success"] = "Đã thêm thành viên vào project.";
+        return RedirectToAction(nameof(Details), new { id = projectId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveMember(int projectId, int userId)
+    {
+        if (!await _projects.RemoveMemberAsync(projectId, userId, CurrentUserId, CurrentRole))
+            TempData["Error"] = "Không thể gỡ thành viên này.";
+        else
+            TempData["Success"] = "Đã gỡ thành viên khỏi project.";
+        return RedirectToAction(nameof(Details), new { id = projectId });
     }
 
     [HttpGet]
@@ -50,7 +72,7 @@ public class ProjectsController : BaseController
             return View(model);
         }
 
-        var project = await _projects.CreateAsync(model, CurrentUserId, IsAdmin);
+        var project = await _projects.CreateAsync(model, CurrentUserId, CanSeeAllData);
         if (project is null)
         {
             ModelState.AddModelError(string.Empty, "Bạn không có quyền tạo project trong workspace này.");
@@ -64,7 +86,7 @@ public class ProjectsController : BaseController
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var project = await _projects.GetByIdForUserAsync(id, CurrentUserId, IsAdmin);
+        var project = await _projects.GetByIdForUserAsync(id, CurrentUserId, CanSeeAllData);
         if (project is null) return NotFound();
 
         await PopulateWorkspaces();
@@ -87,7 +109,7 @@ public class ProjectsController : BaseController
             return View(model);
         }
 
-        if (!await _projects.UpdateAsync(model, CurrentUserId, IsAdmin)) return NotFound();
+        if (!await _projects.UpdateAsync(model, CurrentUserId, CanSeeAllData)) return NotFound();
         return RedirectToAction(nameof(Details), new { id = model.Id });
     }
 
@@ -95,14 +117,14 @@ public class ProjectsController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        await _projects.DeleteAsync(id, CurrentUserId, IsAdmin);
+        await _projects.DeleteAsync(id, CurrentUserId, CanSeeAllData);
         return RedirectToAction(nameof(Index));
     }
 
     // Đổ danh sách workspace vào dropdown của form project.
     private async Task PopulateWorkspaces()
     {
-        var workspaces = await _workspaces.GetForUserAsync(CurrentUserId, IsAdmin);
+        var workspaces = await _workspaces.GetForUserAsync(CurrentUserId, CanSeeAllData);
         ViewBag.Workspaces = workspaces
             .Select(w => new SelectListItem(w.Name, w.Id.ToString()))
             .ToList();

@@ -23,3 +23,15 @@ public enum MemberRole
     Manager = 1,
     Owner = 2
 }
+
+/// <summary>
+/// Loại tài khoản, tách biệt rõ người dùng cá nhân với nhân viên thuộc công ty.
+/// Personal: tự đăng ký hoặc đăng nhập Google — tự quản lý công việc cá nhân, không
+/// thuộc cơ cấu công ty. Company: nhân viên do cấp quản lý tạo, nằm trong phân cấp
+/// SuperAdmin → Admin → Manager → User.
+/// </summary>
+public enum AccountType
+{
+    Personal = 0,
+    Company = 1
+}

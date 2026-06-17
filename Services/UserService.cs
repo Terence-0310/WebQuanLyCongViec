@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Cetee.Data;
 using Cetee.Models;
 using Cetee.ViewModels;
@@ -7,110 +9,88 @@ namespace Cetee.Services;
 
 public interface IUserService
 {
-    Task<List<UserListItemViewModel>> GetAllAsync(int currentUserId);
+    /// <summary>Trang quản lý người dùng trong phạm vi quản lý của người xem.</summary>
+    Task<UserIndexViewModel> GetIndexAsync(int viewerId, string viewerRole);
 
-    /// <summary>Danh sách người mà người xem được phép xem lịch/thống kê (gồm chính mình).
-    /// Admin: tất cả; Manager: bản thân + nhân viên trực thuộc; còn lại: chỉ bản thân.</summary>
+    /// <summary>Danh sách người mà người xem được phép xem (gồm chính mình) — dùng cho
+    /// bộ chọn "Xem theo người". SuperAdmin: tất cả; Admin: đội của mình (manager +
+    /// user thuộc các manager đó); Manager: bản thân + user trực thuộc; còn lại: chỉ mình.</summary>
     Task<List<User>> GetVisibleEmployeesAsync(int viewerId, string viewerRole);
-
-    /// <summary>Những user có thể làm người quản lý (vai trò Manager hoặc Admin).</summary>
-    Task<List<User>> GetManagerCandidatesAsync();
 
     /// <summary>Xác định phạm vi "xem theo người" từ lựa chọn employeeId trên giao diện.</summary>
     Task<EmployeeScopeResult> ResolveScopeAsync(int viewerId, string viewerRole, int? selectedEmployeeId);
 
-    Task<(bool Ok, string? Error)> CreateAsync(CreateUserViewModel model);
-    Task<EditUserViewModel?> GetForEditAsync(int id, int currentUserId);
-    Task<(bool Ok, string? Error)> UpdateAsync(EditUserViewModel model, int currentUserId);
-    Task<(bool Ok, string? Error)> SetRoleAsync(int targetUserId, string roleName, int currentUserId);
-    Task<(bool Ok, string? Error)> DeleteAsync(int targetUserId, int currentUserId);
+    Task<(bool Ok, string? Error)> CreateAsync(CreateUserViewModel model, int creatorId, string creatorRole);
+    Task<EditUserViewModel?> GetForEditAsync(int id, int viewerId, string viewerRole);
+    Task<(bool Ok, string? Error)> UpdateAsync(EditUserViewModel model, int viewerId, string viewerRole);
+    Task<(bool Ok, string? Error)> SetRoleAsync(int targetUserId, string roleName, int viewerId, string viewerRole);
+    Task<(bool Ok, string? Error)> DeleteAsync(int targetUserId, int viewerId, string viewerRole);
 }
 
 /// <summary>
-/// Nghiệp vụ quản lý người dùng dành cho Admin: xem danh sách, phân quyền
-/// Admin/User và xóa tài khoản. Có ràng buộc an toàn: không cho tự đổi quyền/xóa
-/// chính mình và không cho hạ quyền/xóa Admin cuối cùng của hệ thống.
+/// Nghiệp vụ quản lý người dùng theo phân cấp công ty:
+/// SuperAdmin → Admin → Manager → User (xem <see cref="Roles"/>).
+///
+/// Nguyên tắc:
+///  - Một người chỉ quản lý (xem/sửa/xóa) những người có cấp thấp hơn và nằm trong
+///    "đội" của mình — tức trực thuộc trực tiếp hoặc gián tiếp qua một cấp trung gian
+///    (sâu tối đa 2 cấp: Admin thấy Manager và các User của Manager đó).
+///  - SuperAdmin thấy và quản lý toàn bộ; SuperAdmin không bao giờ bị xóa và chỉ
+///    SuperAdmin mới biết tổng số Admin / cấp-bỏ quyền Admin.
+///  - Người tạo trở thành cấp trên trực tiếp của người được tạo (ManagerId = người tạo).
+///  - User tự đăng ký là "User độc lập" (không trực thuộc ai) để tự quản lý việc cá nhân.
 /// </summary>
 public class UserService : IUserService
 {
     private readonly AppDbContext _db;
     private readonly IPasswordHasher _hasher;
+    private readonly UserManager<User> _userManager;
 
-    public UserService(AppDbContext db, IPasswordHasher hasher)
+    public UserService(AppDbContext db, IPasswordHasher hasher, UserManager<User> userManager)
     {
         _db = db;
         _hasher = hasher;
+        _userManager = userManager;
     }
 
-    public async Task<(bool Ok, string? Error)> CreateAsync(CreateUserViewModel model)
+    // ---------------------------------------------------------------------
+    // Phạm vi nhìn thấy (đội của người xem), sâu tối đa 2 cấp + chính mình.
+    // ---------------------------------------------------------------------
+    private IQueryable<User> VisibleUsers(int viewerId, string viewerRole)
     {
-        string email = model.Email.Trim().ToLowerInvariant();
-        if (await _db.Users.AnyAsync(u => u.Email == email))
-            return (false, "Email đã được sử dụng.");
+        var query = _db.Users.Include(u => u.Role).Include(u => u.Manager);
+        if (Roles.CanSeeAllData(viewerRole))
+            return query;
 
-        var roleName = NormalizeRole(model.Role);
-        var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
-        if (role is null)
-            return (false, "Vai trò không hợp lệ.");
-
-        _db.Users.Add(new User
-        {
-            FullName = model.FullName.Trim(),
-            Email = email,
-            PasswordHash = _hasher.Hash(model.Password),
-            RoleId = role.Id,
-            ManagerId = await ResolveManagerIdAsync(model.ManagerId, null),
-            CreatedAt = DateTime.UtcNow
-        });
-        await _db.SaveChangesAsync();
-        return (true, null);
+        return query.Where(u =>
+            u.Id == viewerId
+            || u.ManagerId == viewerId
+            || (u.Manager != null && u.Manager.ManagerId == viewerId));
     }
 
-    // Chỉ chấp nhận 3 vai trò hợp lệ; mặc định về User nếu lệch.
-    private static string NormalizeRole(string? role) =>
-        role is "Admin" or "Manager" or "User" ? role : "User";
-
-    // Người quản lý phải tồn tại, có vai trò Manager/Admin, và không phải chính mình.
-    private async Task<int?> ResolveManagerIdAsync(int? managerId, int? selfId)
-    {
-        if (managerId is not int mid || mid == selfId) return null;
-        bool valid = await _db.Users.AnyAsync(u => u.Id == mid && (u.Role.Name == "Manager" || u.Role.Name == "Admin"));
-        return valid ? mid : null;
-    }
-
-    public Task<List<User>> GetVisibleEmployeesAsync(int viewerId, string viewerRole)
-    {
-        if (viewerRole == "Admin")
-            return _db.Users.Include(u => u.Role).OrderBy(u => u.FullName).ToListAsync();
-
-        if (viewerRole == "Manager")
-            return _db.Users.Include(u => u.Role)
-                .Where(u => u.Id == viewerId || u.ManagerId == viewerId)
-                .OrderBy(u => u.FullName)
-                .ToListAsync();
-
-        // Nhân viên / người dùng độc lập: chỉ thấy chính mình.
-        return _db.Users.Where(u => u.Id == viewerId).ToListAsync();
-    }
-
-    public Task<List<User>> GetManagerCandidatesAsync() =>
-        _db.Users.Include(u => u.Role)
-            .Where(u => u.Role.Name == "Manager" || u.Role.Name == "Admin")
+    public async Task<List<User>> GetVisibleEmployeesAsync(int viewerId, string viewerRole) =>
+        // "Nhân viên" = tài khoản công ty; loại trừ tài khoản cá nhân khỏi bộ chọn người
+        // và khỏi danh sách ứng viên thêm vào workspace/project.
+        await VisibleUsers(viewerId, viewerRole)
+            .Where(u => u.AccountType == AccountType.Company)
             .OrderBy(u => u.FullName)
             .ToListAsync();
 
     public async Task<EmployeeScopeResult> ResolveScopeAsync(int viewerId, string viewerRole, int? selectedEmployeeId)
     {
         var visible = await GetVisibleEmployeesAsync(viewerId, viewerRole);
-        bool canViewOthers = (viewerRole == "Admin" || viewerRole == "Manager") && visible.Count > 1;
+
+        // Chỉ những vai trò quản lý (Manager trở lên) và thực sự có người khác để xem
+        // mới hiển thị bộ chọn.
+        bool canViewOthers = Roles.Level(viewerRole) >= Roles.Level(Roles.Manager) && visible.Count > 1;
 
         int selected;
         if (!canViewOthers)
-            selected = viewerId;                       // Nhân viên/độc lập: luôn là chính mình.
+            selected = viewerId;                                                  // Luôn là chính mình.
         else if (selectedEmployeeId is int id && id > 0 && visible.Any(u => u.Id == id))
-            selected = id;                             // Chọn một người cụ thể hợp lệ.
+            selected = id;                                                        // Một người cụ thể hợp lệ.
         else
-            selected = 0;                              // Mặc định / chọn "Tất cả".
+            selected = 0;                                                         // "Tất cả".
 
         return new EmployeeScopeResult
         {
@@ -121,42 +101,142 @@ public class UserService : IUserService
         };
     }
 
-    public async Task<EditUserViewModel?> GetForEditAsync(int id, int currentUserId)
+    // ---------------------------------------------------------------------
+    // Quyền quản lý một người cụ thể.
+    // ---------------------------------------------------------------------
+    /// <summary>Người xem có quyền quản lý (sửa/đổi vai trò/xóa) <paramref name="target"/> không.
+    /// Yêu cầu: target có cấp THẤP HƠN người xem và nằm trong đội của người xem
+    /// (SuperAdmin quản lý mọi cấp dưới). Không bao giờ quản lý được chính mình.</summary>
+    private static bool CanManage(int viewerId, string viewerRole, User target)
     {
-        var user = await _db.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == id);
+        if (target.Id == viewerId) return false;
+        if (Roles.Level(target.Role.Name) >= Roles.Level(viewerRole)) return false;
+        if (Roles.CanSeeAllData(viewerRole)) return true; // SuperAdmin: toàn quyền cấp dưới.
+
+        // Trong đội: trực thuộc trực tiếp hoặc qua một cấp trung gian.
+        return target.ManagerId == viewerId
+            || (target.Manager != null && target.Manager.ManagerId == viewerId);
+    }
+
+    // ---------------------------------------------------------------------
+    // Danh sách quản lý người dùng.
+    // ---------------------------------------------------------------------
+    public async Task<UserIndexViewModel> GetIndexAsync(int viewerId, string viewerRole)
+    {
+        var users = await VisibleUsers(viewerId, viewerRole).ToListAsync();
+
+        var rows = users
+            .OrderByDescending(u => Roles.Level(u.Role.Name)) // cấp cao lên trước
+            .ThenBy(u => u.FullName)
+            .Select(u => new UserListItemViewModel
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                Email = u.Email!,
+                RoleName = u.Role.Name!,
+                AccountType = u.AccountType,
+                ManagerName = u.Manager?.FullName,
+                CreatedAt = u.CreatedAt,
+                OwnedWorkspaceCount = _db.Workspaces.Count(w => w.OwnerId == u.Id),
+                AssignedTaskCount = _db.Tasks.Count(t => t.AssigneeId == u.Id),
+                IsSelf = u.Id == viewerId,
+                CanEdit = CanManage(viewerId, viewerRole, u) || u.Id == viewerId,
+                CanDelete = CanManage(viewerId, viewerRole, u),
+                CanToggleAdmin = viewerRole == Roles.SuperAdmin && u.Id != viewerId && u.Role.Name != Roles.SuperAdmin
+            })
+            .ToList();
+
+        return new UserIndexViewModel
+        {
+            Users = rows,
+            ViewerRole = viewerRole,
+            CanCreate = Roles.AssignableBy(viewerRole).Any(),
+            // Chỉ SuperAdmin được biết tổng số Admin của hệ thống.
+            TotalAdmins = viewerRole == Roles.SuperAdmin
+                ? await _db.Users.CountAsync(u => u.Role.Name == Roles.Admin)
+                : null
+        };
+    }
+
+    // ---------------------------------------------------------------------
+    // Tạo người dùng.
+    // ---------------------------------------------------------------------
+    public async Task<(bool Ok, string? Error)> CreateAsync(CreateUserViewModel model, int creatorId, string creatorRole)
+    {
+        if (!Roles.AssignableBy(creatorRole).Contains(model.Role))
+            return (false, "Bạn không được phép tạo người dùng với vai trò này.");
+
+        string email = model.Email.Trim().ToLowerInvariant();
+        if (await _db.Users.AnyAsync(u => u.Email == email))
+            return (false, "Email đã được sử dụng.");
+
+        var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == model.Role);
+        if (role is null)
+            return (false, "Vai trò không hợp lệ.");
+
+        var user = new User
+        {
+            FullName = model.FullName.Trim(),
+            Email = email,
+            UserName = email,
+            EmailConfirmed = true,
+            RoleId = role.Id,
+            ManagerId = creatorId, // Người tạo là cấp trên trực tiếp.
+            AccountType = AccountType.Company, // Do cấp quản lý tạo = nhân viên công ty.
+            CreatedAt = DateTime.UtcNow
+        };
+        var result = await _userManager.CreateAsync(user, model.Password);
+        if (!result.Succeeded)
+            return (false, string.Join("; ", result.Errors.Select(e => e.Description)));
+
+        return (true, null);
+    }
+
+    // ---------------------------------------------------------------------
+    // Sửa người dùng.
+    // ---------------------------------------------------------------------
+    public async Task<EditUserViewModel?> GetForEditAsync(int id, int viewerId, string viewerRole)
+    {
+        var user = await _db.Users.Include(u => u.Role).Include(u => u.Manager)
+            .FirstOrDefaultAsync(u => u.Id == id);
         if (user is null) return null;
+
+        bool isSelf = user.Id == viewerId;
+        if (!isSelf && !CanManage(viewerId, viewerRole, user)) return null;
 
         return new EditUserViewModel
         {
             Id = user.Id,
             FullName = user.FullName,
-            Email = user.Email,
-            Role = user.Role.Name,
-            ManagerId = user.ManagerId,
-            IsSelf = user.Id == currentUserId
+            Email = user.Email!,
+            Role = user.Role.Name!,
+            IsSelf = isSelf,
+            RoleOptions = RoleOptionsFor(viewerRole, user.Role.Name)
         };
     }
 
-    public async Task<(bool Ok, string? Error)> UpdateAsync(EditUserViewModel model, int currentUserId)
+    public async Task<(bool Ok, string? Error)> UpdateAsync(EditUserViewModel model, int viewerId, string viewerRole)
     {
-        var user = await _db.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == model.Id);
+        var user = await _db.Users.Include(u => u.Role).Include(u => u.Manager)
+            .FirstOrDefaultAsync(u => u.Id == model.Id);
         if (user is null)
             return (false, "Không tìm thấy người dùng.");
+
+        bool isSelf = user.Id == viewerId;
+        if (!isSelf && !CanManage(viewerId, viewerRole, user))
+            return (false, "Bạn không có quyền sửa người dùng này.");
 
         string email = model.Email.Trim().ToLowerInvariant();
         if (await _db.Users.AnyAsync(u => u.Email == email && u.Id != model.Id))
             return (false, "Email đã được sử dụng.");
 
-        // Đổi vai trò (nếu khác) với các ràng buộc an toàn như khi phân quyền.
-        var roleName = NormalizeRole(model.Role);
-        if (user.Role.Name != roleName)
+        // Đổi vai trò: không áp dụng cho chính mình; vai trò mới phải nằm trong quyền gán.
+        if (!isSelf && user.Role.Name != model.Role)
         {
-            if (model.Id == currentUserId)
-                return (false, "Bạn không thể tự thay đổi vai trò của chính mình.");
-            if (user.Role.Name == "Admin" && roleName != "Admin" && await IsLastAdminAsync(model.Id))
-                return (false, "Không thể hạ quyền Admin cuối cùng của hệ thống.");
+            if (!Roles.AssignableBy(viewerRole).Contains(model.Role))
+                return (false, "Bạn không được phép gán vai trò này.");
 
-            var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
+            var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == model.Role);
             if (role is null)
                 return (false, "Vai trò không hợp lệ.");
             user.RoleId = role.Id;
@@ -164,9 +244,11 @@ public class UserService : IUserService
 
         user.FullName = model.FullName.Trim();
         user.Email = email;
-        user.ManagerId = await ResolveManagerIdAsync(model.ManagerId, user.Id);
+        // Đồng bộ các trường chuẩn hóa của Identity để đăng nhập theo email vẫn đúng.
+        user.NormalizedEmail = email.ToUpperInvariant();
+        user.UserName = email;
+        user.NormalizedUserName = email.ToUpperInvariant();
 
-        // Chỉ đặt lại mật khẩu khi Admin có nhập mật khẩu mới.
         if (!string.IsNullOrEmpty(model.NewPassword))
             user.PasswordHash = _hasher.Hash(model.NewPassword);
 
@@ -174,71 +256,57 @@ public class UserService : IUserService
         return (true, null);
     }
 
-    public Task<List<UserListItemViewModel>> GetAllAsync(int currentUserId) =>
-        _db.Users
-            .Include(u => u.Role)
-            .OrderBy(u => u.Role.Name == "Admin" ? 0 : 1)
-            .ThenBy(u => u.FullName)
-            .Select(u => new UserListItemViewModel
-            {
-                Id = u.Id,
-                FullName = u.FullName,
-                Email = u.Email,
-                RoleName = u.Role.Name,
-                ManagerName = u.Manager != null ? u.Manager.FullName : null,
-                CreatedAt = u.CreatedAt,
-                OwnedWorkspaceCount = _db.Workspaces.Count(w => w.OwnerId == u.Id),
-                AssignedTaskCount = u.AssignedTasks.Count,
-                IsSelf = u.Id == currentUserId
-            })
-            .ToListAsync();
-
-    public async Task<(bool Ok, string? Error)> SetRoleAsync(int targetUserId, string roleName, int currentUserId)
+    // ---------------------------------------------------------------------
+    // Cấp / bỏ quyền Admin (chỉ SuperAdmin).
+    // ---------------------------------------------------------------------
+    public async Task<(bool Ok, string? Error)> SetRoleAsync(int targetUserId, string roleName, int viewerId, string viewerRole)
     {
-        if (targetUserId == currentUserId)
+        if (viewerRole != Roles.SuperAdmin)
+            return (false, "Chỉ Super Admin được cấp hoặc bỏ quyền Admin.");
+        if (targetUserId == viewerId)
             return (false, "Bạn không thể tự thay đổi vai trò của chính mình.");
-
-        var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
-        if (role is null)
+        if (!Roles.AssignableBy(viewerRole).Contains(roleName))
             return (false, "Vai trò không hợp lệ.");
 
         var user = await _db.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == targetUserId);
         if (user is null)
             return (false, "Không tìm thấy người dùng.");
+        if (user.Role.Name == Roles.SuperAdmin)
+            return (false, "Không thể đổi vai trò của Super Admin.");
 
-        if (user.RoleId == role.Id)
+        if (user.Role.Name == roleName)
             return (true, null); // Không có gì thay đổi.
 
-        // Không cho hạ quyền Admin cuối cùng để tránh mất quyền quản trị hệ thống.
-        if (user.Role.Name == "Admin" && roleName != "Admin" && await IsLastAdminAsync(targetUserId))
-            return (false, "Không thể hạ quyền Admin cuối cùng của hệ thống.");
-
+        var role = await _db.Roles.FirstAsync(r => r.Name == roleName);
         user.RoleId = role.Id;
         await _db.SaveChangesAsync();
         return (true, null);
     }
 
-    public async Task<(bool Ok, string? Error)> DeleteAsync(int targetUserId, int currentUserId)
+    // ---------------------------------------------------------------------
+    // Xóa người dùng.
+    // ---------------------------------------------------------------------
+    public async Task<(bool Ok, string? Error)> DeleteAsync(int targetUserId, int viewerId, string viewerRole)
     {
-        if (targetUserId == currentUserId)
-            return (false, "Bạn không thể xóa chính tài khoản đang đăng nhập.");
-
-        var user = await _db.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == targetUserId);
+        var user = await _db.Users.Include(u => u.Role).Include(u => u.Manager)
+            .FirstOrDefaultAsync(u => u.Id == targetUserId);
         if (user is null)
             return (false, "Không tìm thấy người dùng.");
 
-        if (user.Role.Name == "Admin" && await IsLastAdminAsync(targetUserId))
-            return (false, "Không thể xóa Admin cuối cùng của hệ thống.");
+        if (user.Role.Name == Roles.SuperAdmin)
+            return (false, "Không thể xóa Super Admin dưới mọi hình thức.");
+        if (!CanManage(viewerId, viewerRole, user))
+            return (false, "Bạn không có quyền xóa người dùng này.");
 
         // Gỡ các ràng buộc khóa ngoại kiểu Restrict trước khi xóa user.
         // (Task được giao -> tự SET NULL; Notification/ActivityLog -> tự CASCADE ở DB.)
         await using var tx = await _db.Database.BeginTransactionAsync();
 
-        // Gỡ liên kết nhân viên trực thuộc (nếu user này là quản lý của người khác).
+        // Gỡ liên kết nhân viên trực thuộc (nếu user này là cấp trên của người khác).
         await _db.Users.Where(u => u.ManagerId == targetUserId)
             .ExecuteUpdateAsync(s => s.SetProperty(u => u.ManagerId, (int?)null));
 
-        // Bình luận và tư cách thành viên của user (chặn xóa nếu còn).
+        // Bình luận và tư cách thành viên của user.
         await _db.TaskComments.Where(c => c.UserId == targetUserId).ExecuteDeleteAsync();
         await _db.ProjectMembers.Where(m => m.UserId == targetUserId).ExecuteDeleteAsync();
         await _db.WorkspaceMembers.Where(m => m.UserId == targetUserId).ExecuteDeleteAsync();
@@ -252,13 +320,18 @@ public class UserService : IUserService
         return (true, null);
     }
 
-    // Còn đúng một Admin và đó chính là user đang xét.
-    private async Task<bool> IsLastAdminAsync(int userId)
+    // Các vai trò người xem được phép gán, dạng option cho dropdown (đánh dấu vai trò hiện tại).
+    private static List<SelectListItem> RoleOptionsFor(string viewerRole, string? currentRole)
     {
-        var adminIds = await _db.Users
-            .Where(u => u.Role.Name == "Admin")
-            .Select(u => u.Id)
-            .ToListAsync();
-        return adminIds.Count <= 1 && adminIds.Contains(userId);
+        var assignable = Roles.AssignableBy(viewerRole).ToList();
+
+        // Khi sửa, vai trò hiện tại của người được sửa có thể bằng cấp người xem (không nằm
+        // trong danh sách gán được) — vẫn hiển thị để không mất thông tin, nhưng đã khóa ở View.
+        if (currentRole != null && !assignable.Contains(currentRole))
+            assignable.Insert(0, currentRole);
+
+        return assignable
+            .Select(r => new SelectListItem(Roles.Label(r), r, r == currentRole))
+            .ToList();
     }
 }

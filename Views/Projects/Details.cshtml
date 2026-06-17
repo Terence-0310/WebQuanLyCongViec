@@ -11,6 +11,9 @@
     </div>
 }
 
+@if (TempData["Success"] is string ok) { <div class="flash flash-success">@ok</div> }
+@if (TempData["Error"] is string err) { <div class="flash flash-error">@err</div> }
+
 <div class="card mb-2">
     <div class="card-body">
         <p class="muted mb-2">@p.Workspace?.Name • @(string.IsNullOrEmpty(p.Description) ? "Không có mô tả" : p.Description)</p>
@@ -93,7 +96,7 @@
     <!-- Thành viên project -->
     <div class="card">
         <div class="card-body">
-            <h3 class="mt-0">Thành viên</h3>
+            <h3 class="mt-0">Thành viên (@Model.Members.Count())</h3>
             @if (!Model.Members.Any())
             {
                 <p class="muted">Chưa có thành viên.</p>
@@ -102,18 +105,55 @@
             {
                 <div class="table-wrap">
                     <table class="table">
-                        <thead><tr><th>Họ tên</th><th>Vai trò</th></tr></thead>
+                        <thead><tr><th>Họ tên</th><th>Chức vụ</th><th>Vai trò</th><th class="text-right"></th></tr></thead>
                         <tbody>
                         @foreach (var m in Model.Members)
                         {
                             <tr>
                                 <td><div class="cell-user"><partial name="_Avatar" model="@(m.User?.FullName ?? string.Empty)" /><span>@m.User?.FullName</span></div></td>
-                                <td class="muted text-sm">@m.Role</td>
+                                <td class="muted text-sm">@Roles.Label(m.User?.Role?.Name)</td>
+                                <td><span class="tag @m.Role.CssClass() plain">@m.Role.Label()</span></td>
+                                <td class="text-right">
+                                    @if (Model.CanManageMembers && m.Role != Cetee.Models.MemberRole.Owner)
+                                    {
+                                        <form class="inline-form" asp-action="RemoveMember" method="post"
+                                              onsubmit="return confirm('Gỡ @m.User?.FullName khỏi project?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="projectId" value="@p.Id" />
+                                            <input type="hidden" name="userId" value="@m.UserId" />
+                                            <button type="submit" class="btn btn-danger btn-sm">Gỡ</button>
+                                        </form>
+                                    }
+                                </td>
                             </tr>
                         }
                         </tbody>
                     </table>
                 </div>
+            }
+
+            @if (Model.CanManageMembers)
+            {
+                @if (Model.AddableUsers.Any())
+                {
+                    <form class="inline-form mt-1" asp-action="AddMember" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="projectId" value="@p.Id" />
+                        <select name="userId" class="form-control form-control-sm" required>
+                            <option value="">— Chọn thành viên workspace —</option>
+                            @foreach (var u in Model.AddableUsers)
+                            {
+                                <option value="@u.Id">@u.FullName</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm">Thêm</button>
+                    </form>
+                    <span class="field-error muted">Chỉ bố trí người đã là thành viên của workspace chứa project.</span>
+                }
+                else
+                {
+                    <p class="muted text-sm mt-1">Mọi thành viên workspace đã có trong project (hoặc workspace chưa có ai khác).</p>
+                }
             }
         </div>
     </div>

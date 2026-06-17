@@ -24,6 +24,9 @@ publish/
 *.mdf
 *.ldf
 
+# Secret cục bộ (SMTP password, JWT key) — KHÔNG commit
+appsettings.Development.json
+
 # Logs & tạm
 *.log
 *.tmp

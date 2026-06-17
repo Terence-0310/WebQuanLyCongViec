@@ -1,24 +1,38 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Cetee.Models;
 using Cetee.Services;
 using Cetee.ViewModels;
 
 namespace Cetee.Controllers;
 
-/// <summary>Đăng ký, đăng nhập, đăng xuất.</summary>
+/// <summary>Đăng ký, đăng nhập (cookie Identity + Google), đăng xuất, quên mật khẩu.</summary>
 public class AccountController : Controller
 {
     private readonly IAuthService _auth;
+    private readonly IPasswordResetService _reset;
+    private readonly SignInManager<User> _signInManager;
+    private readonly UserManager<User> _userManager;
 
-    public AccountController(IAuthService auth) => _auth = auth;
+    public AccountController(
+        IAuthService auth,
+        IPasswordResetService reset,
+        SignInManager<User> signInManager,
+        UserManager<User> userManager)
+    {
+        _auth = auth;
+        _reset = reset;
+        _signInManager = signInManager;
+        _userManager = userManager;
+    }
 
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAction("Index", "Home");
 
         return View(new LoginViewModel { ReturnUrl = returnUrl });
     }
@@ -29,26 +43,28 @@ public class AccountController : Controller
     {
         if (!ModelState.IsValid) return View(model);
 
-        var user = await _auth.ValidateCredentialsAsync(model.Email, model.Password);
-        if (user is null)
+        var user = await _userManager.FindByEmailAsync(model.Email.Trim());
+        if (user is not null)
         {
-            ModelState.AddModelError(string.Empty, "Email hoặc mật khẩu không đúng.");
-            return View(model);
+            var result = await _signInManager.PasswordSignInAsync(
+                user, model.Password, isPersistent: true, lockoutOnFailure: false);
+            if (result.Succeeded)
+            {
+                if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+                    return Redirect(model.ReturnUrl);
+                return RedirectToAction("Index", "Home");
+            }
         }
 
-        await SignInAsync(user.Id, user.FullName, user.Role.Name);
-
-        if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-            return Redirect(model.ReturnUrl);
-
-        return RedirectToAction("Index", "Dashboard");
+        ModelState.AddModelError(string.Empty, "Email hoặc mật khẩu không đúng.");
+        return View(model);
     }
 
     [HttpGet]
     public IActionResult Register()
     {
         if (User.Identity?.IsAuthenticated == true)
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAction("Index", "Home");
 
         return View(new RegisterViewModel());
     }
@@ -66,32 +82,136 @@ public class AccountController : Controller
             return View(model);
         }
 
-        await SignInAsync(user!.Id, user.FullName, "User");
-        return RedirectToAction("Index", "Dashboard");
+        await _signInManager.SignInAsync(user!, isPersistent: true);
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        await _signInManager.SignOutAsync();
         return RedirectToAction("Login");
     }
 
-    // Tạo cookie xác thực cho user.
-    private async Task SignInAsync(int userId, string fullName, string roleName)
+    // ---------------------------------------------------------------------
+    // Đăng nhập bằng Google (OAuth2). Cần cấu hình Authentication:Google trong appsettings.
+    // ---------------------------------------------------------------------
+    [HttpGet]
+    public async Task<IActionResult> ExternalLogin(
+        [FromServices] IAuthenticationSchemeProvider schemes,
+        string provider = "Google", string? returnUrl = null)
     {
-        var claims = new List<Claim>
+        if (await schemes.GetSchemeAsync(provider) is null)
         {
-            new(ClaimTypes.NameIdentifier, userId.ToString()),
-            new(ClaimTypes.Name, fullName),
-            new(ClaimTypes.Role, roleName)
-        };
+            TempData["Info"] = "Đăng nhập Google chưa được cấu hình (thiếu Client ID/Secret).";
+            return RedirectToAction(nameof(Login));
+        }
 
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(identity),
-            new AuthenticationProperties { IsPersistent = true });
+        var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { returnUrl });
+        var props = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+        return Challenge(props, provider);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExternalLoginCallback(string? returnUrl = null, string? remoteError = null)
+    {
+        if (remoteError is not null)
+        {
+            TempData["Info"] = "Đăng nhập Google thất bại: " + remoteError;
+            return RedirectToAction(nameof(Login));
+        }
+
+        var info = await _signInManager.GetExternalLoginInfoAsync();
+        if (info is null)
+        {
+            TempData["Info"] = "Không lấy được thông tin đăng nhập từ Google.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+        var name = info.Principal.FindFirstValue(ClaimTypes.Name);
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            TempData["Info"] = "Tài khoản Google không cung cấp email.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        var user = await _auth.FindOrCreateExternalUserAsync(email, name ?? email);
+        await _signInManager.SignInAsync(user, isPersistent: true);
+        await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+        return RedirectToAction("Index", "Home");
+    }
+
+    // ---------------------------------------------------------------------
+    // Quên mật khẩu: nhập email -> nhận OTP qua Gmail -> xác minh -> đổi mật khẩu.
+    // ---------------------------------------------------------------------
+    [HttpGet]
+    public IActionResult ForgotPassword(string? email) =>
+        View(new ForgotPasswordViewModel { Email = email ?? string.Empty });
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        await _reset.RequestOtpAsync(model.Email);
+        TempData["Info"] = "Nếu email tồn tại trong hệ thống, mã OTP đã được gửi tới hộp thư.";
+        return RedirectToAction(nameof(VerifyOtp), new { email = model.Email });
+    }
+
+    [HttpGet]
+    public IActionResult VerifyOtp(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return RedirectToAction(nameof(ForgotPassword));
+        return View(new VerifyOtpViewModel { Email = email });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyOtp(VerifyOtpViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var (ok, error, token) = await _reset.VerifyOtpAsync(model.Email, model.Code);
+        if (!ok)
+        {
+            ModelState.AddModelError(string.Empty, error!);
+            return View(model);
+        }
+
+        TempData["ResetToken"] = token;
+        return RedirectToAction(nameof(ResetPassword));
+    }
+
+    [HttpGet]
+    public IActionResult ResetPassword()
+    {
+        var token = TempData["ResetToken"] as string;
+        if (string.IsNullOrEmpty(token)) return RedirectToAction(nameof(ForgotPassword));
+
+        TempData.Keep("ResetToken");
+        return View(new ResetPasswordViewModel { Token = token });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+    {
+        if (!ModelState.IsValid) return View(model);
+
+        var (ok, error) = await _reset.ResetPasswordAsync(model.Token, model.NewPassword);
+        if (!ok)
+        {
+            ModelState.AddModelError(string.Empty, error!);
+            return View(model);
+        }
+
+        TempData["Info"] = "Đổi mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới.";
+        return RedirectToAction(nameof(Login));
     }
 }

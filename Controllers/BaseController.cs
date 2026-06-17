@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Cetee.Models;
 
 namespace Cetee.Controllers;
 
@@ -10,12 +11,10 @@ public abstract class BaseController : Controller
     protected int CurrentUserId =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    /// <summary>Người dùng hiện tại có vai trò Admin hay không.</summary>
-    protected bool IsAdmin => User.IsInRole("Admin");
+    /// <summary>Tên vai trò hiện tại ("SuperAdmin" / "Admin" / "Manager" / "User").</summary>
+    protected string CurrentRole => User.FindFirstValue(ClaimTypes.Role) ?? Roles.User;
 
-    /// <summary>Người dùng hiện tại có vai trò Manager (quản lý) hay không.</summary>
-    protected bool IsManager => User.IsInRole("Manager");
-
-    /// <summary>Tên vai trò hiện tại ("Admin" / "Manager" / "User").</summary>
-    protected string CurrentRole => User.FindFirstValue(ClaimTypes.Role) ?? "User";
+    /// <summary>Chỉ SuperAdmin được phép xem/thao tác toàn bộ dữ liệu hệ thống.
+    /// Các vai trò khác bị giới hạn theo quyền thành viên và phạm vi quản lý của mình.</summary>
+    protected bool CanSeeAllData => Roles.CanSeeAllData(CurrentRole);
 }

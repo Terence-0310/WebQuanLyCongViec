@@ -1,14 +1,14 @@
-using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 
 namespace Cetee.Models;
 
-/// <summary>Vai trò hệ thống (Admin / User) dùng cho phân quyền cơ bản.</summary>
-public class Role
+/// <summary>Vai trò hệ thống phân cấp (SuperAdmin / Admin / Manager / User) — kế thừa
+/// <see cref="IdentityRole{TKey}"/> khóa int. Xem <see cref="Roles"/>.</summary>
+public class Role : IdentityRole<int>
 {
-    public int Id { get; set; }
+    public Role() { }
+    public Role(string name) : base(name) { }
 
-    [Required, MaxLength(50)]
-    public string Name { get; set; } = string.Empty;
-
+    /// <summary>Các user gắn vai trò này qua FK trực tiếp <see cref="User.RoleId"/>.</summary>
     public ICollection<User> Users { get; set; } = new List<User>();
 }

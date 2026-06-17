@@ -1,15 +1,15 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Cetee.Models;
 
 namespace Cetee.Data;
 
-/// <summary>DbContext chính của ứng dụng (EF Core Code First).</summary>
-public class AppDbContext : DbContext
+/// <summary>DbContext chính — kế thừa IdentityDbContext (khóa int) để dùng ASP.NET Core Identity.</summary>
+public class AppDbContext : IdentityDbContext<User, Role, int>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public DbSet<Role> Roles => Set<Role>();
-    public DbSet<User> Users => Set<User>();
+    // Users và Roles đã có sẵn từ IdentityDbContext.
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<Project> Projects => Set<Project>();
@@ -19,15 +19,23 @@ public class AppDbContext : DbContext
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
+    public DbSet<PasswordResetCode> PasswordResetCodes => Set<PasswordResetCode>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
+        base.OnModelCreating(modelBuilder); // cấu hình các bảng Identity
 
-        // Email là duy nhất.
+        // Giữ tên bảng "Users"/"Roles" (thay vì AspNetUsers/AspNetRoles) để không phải
+        // đổi tên bảng, giữ nguyên mọi khóa ngoại và script seed hiện có.
+        modelBuilder.Entity<User>().ToTable("Users");
+        modelBuilder.Entity<Role>().ToTable("Roles");
+
+        // Một user có đúng một vai trò qua FK trực tiếp RoleId (song song với Identity roles).
         modelBuilder.Entity<User>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
+            .HasOne(u => u.Role)
+            .WithMany(r => r.Users)
+            .HasForeignKey(u => u.RoleId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Quan hệ quản lý: User (nhân viên) -> Manager (tự tham chiếu User).
         // Restrict để tránh vòng cascade; khi xóa Manager sẽ gỡ liên kết thủ công.
@@ -138,6 +146,13 @@ public class AppDbContext : DbContext
             .HasOne(a => a.User)
             .WithMany()
             .HasForeignKey(a => a.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Mã OTP đặt lại mật khẩu thuộc 1 user (xóa user -> xóa mã).
+        modelBuilder.Entity<PasswordResetCode>()
+            .HasOne(p => p.User)
+            .WithMany()
+            .HasForeignKey(p => p.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -7,8 +7,10 @@ namespace Cetee.Services;
 
 public interface IDashboardService
 {
-    /// <summary>Tổng hợp Dashboard. employeeId != null = xem thống kê của một nhân viên cụ thể.</summary>
-    Task<DashboardViewModel> GetForUserAsync(int viewerId, bool isAdmin, int? employeeId = null);
+    /// <summary>Tổng hợp Dashboard cho một tập người dùng trong phạm vi xem.
+    /// scopeUserIds = null nghĩa là toàn hệ thống (chỉ SuperAdmin); ngược lại chỉ tính
+    /// dữ liệu của những người trong tập (một đội, hoặc một cá nhân).</summary>
+    Task<DashboardViewModel> GetForScopeAsync(IReadOnlyList<int>? scopeUserIds);
 }
 
 /// <summary>Tổng hợp số liệu cho trang Dashboard.</summary>
@@ -23,34 +25,25 @@ public class DashboardService : IDashboardService
         _activity = activity;
     }
 
-    public async Task<DashboardViewModel> GetForUserAsync(int viewerId, bool isAdmin, int? employeeId = null)
+    public async Task<DashboardViewModel> GetForScopeAsync(IReadOnlyList<int>? scopeUserIds)
     {
         IQueryable<Cetee.Models.Workspace> workspaces;
         IQueryable<Cetee.Models.Project> projects;
         IQueryable<Cetee.Models.TaskItem> tasks;
 
-        if (employeeId is int emp)
+        if (scopeUserIds is null)
         {
-            // Thống kê của riêng một nhân viên: workspace/project họ tham gia, task được giao cho họ.
-            workspaces = _db.Workspaces.Where(w => w.Members.Any(m => m.UserId == emp));
-            projects = _db.Projects.Where(p => p.Workspace.Members.Any(m => m.UserId == emp));
-            tasks = _db.Tasks.Where(t => t.AssigneeId == emp);
-        }
-        else if (isAdmin)
-        {
+            // Toàn hệ thống (SuperAdmin).
             workspaces = _db.Workspaces;
             projects = _db.Projects;
             tasks = _db.Tasks;
         }
         else
         {
-            // Manager/User xem "Tất cả" trong phạm vi của mình (workspace tham gia + việc nhân viên trực thuộc).
-            workspaces = _db.Workspaces.Where(w => w.Members.Any(m => m.UserId == viewerId));
-            projects = _db.Projects.Where(p => p.Workspace.Members.Any(m => m.UserId == viewerId));
-            tasks = _db.Tasks.Where(t =>
-                t.Project.Workspace.Members.Any(m => m.UserId == viewerId)
-                || t.AssigneeId == viewerId
-                || (t.Assignee != null && t.Assignee.ManagerId == viewerId));
+            // Một đội hoặc một cá nhân: workspace/project nhóm tham gia, task giao cho nhóm.
+            workspaces = _db.Workspaces.Where(w => w.Members.Any(m => scopeUserIds.Contains(m.UserId)));
+            projects = _db.Projects.Where(p => p.Workspace.Members.Any(m => scopeUserIds.Contains(m.UserId)));
+            tasks = _db.Tasks.Where(t => t.AssigneeId != null && scopeUserIds.Contains(t.AssigneeId.Value));
         }
 
         var today = DateTime.UtcNow.Date;
@@ -89,7 +82,7 @@ public class DashboardService : IDashboardService
                 .Take(6)
                 .ToListAsync(),
 
-            RecentActivities = await _activity.GetRecentAsync(employeeId ?? viewerId, isAdmin && employeeId is null)
+            RecentActivities = await _activity.GetRecentForScopeAsync(scopeUserIds)
         };
     }
 }

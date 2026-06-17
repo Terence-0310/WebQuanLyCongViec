@@ -1,4 +1,6 @@
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Identity;
+using Cetee.Models;
 
 namespace Cetee.Services;
 
@@ -9,7 +11,12 @@ public interface IPasswordHasher
     bool Verify(string password, string hash);
 }
 
-public class PasswordHasher : IPasswordHasher
+/// <summary>
+/// PBKDF2 (SHA-256, 100k vòng). Cài cả <see cref="IPasswordHasher{User}"/> của Identity
+/// để SignInManager/UserManager dùng đúng định dạng băm này — nhờ vậy mật khẩu cũ
+/// (đã lưu dạng "iterations.salt.key") vẫn đăng nhập được sau khi chuyển sang Identity.
+/// </summary>
+public class PasswordHasher : IPasswordHasher, IPasswordHasher<User>
 {
     private const int SaltSize = 16;     // 128-bit salt
     private const int KeySize = 32;      // 256-bit hash
@@ -36,4 +43,12 @@ public class PasswordHasher : IPasswordHasher
         byte[] attempt = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, Algorithm, key.Length);
         return CryptographicOperations.FixedTimeEquals(attempt, key);
     }
+
+    // --- Cài đặt IPasswordHasher<User> của Identity, ủy quyền về cùng thuật toán ---
+    public string HashPassword(User user, string password) => Hash(password);
+
+    public PasswordVerificationResult VerifyHashedPassword(User user, string hashedPassword, string providedPassword) =>
+        Verify(providedPassword, hashedPassword)
+            ? PasswordVerificationResult.Success
+            : PasswordVerificationResult.Failed;
 }

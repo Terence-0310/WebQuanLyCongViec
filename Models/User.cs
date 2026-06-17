@@ -1,26 +1,26 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity;
 
 namespace Cetee.Models;
 
-/// <summary>Tài khoản người dùng. Mật khẩu được lưu dưới dạng hash.</summary>
-public class User
+/// <summary>
+/// Tài khoản người dùng — kế thừa <see cref="IdentityUser{TKey}"/> với khóa kiểu int
+/// (giữ nguyên mọi khóa ngoại int trong hệ thống). Identity cung cấp Id, Email,
+/// UserName, PasswordHash...; lớp này bổ sung các trường nghiệp vụ riêng.
+/// </summary>
+public class User : IdentityUser<int>
 {
-    public int Id { get; set; }
-
     [Required, MaxLength(100)]
     public string FullName { get; set; } = string.Empty;
 
-    [Required, MaxLength(150)]
-    public string Email { get; set; } = string.Empty;
-
-    [Required]
-    public string PasswordHash { get; set; } = string.Empty;
-
+    // Một user có đúng một vai trò (FK trực tiếp, song song với Identity roles).
     public int RoleId { get; set; }
     public Role Role { get; set; } = null!;
 
-    // Người quản lý trực tiếp (nếu là nhân viên trực thuộc một Manager). Null = không
-    // trực thuộc ai (Manager/Admin hoặc người dùng độc lập dùng cho cá nhân).
+    /// <summary>Phân loại tài khoản: cá nhân hay nhân viên công ty.</summary>
+    public AccountType AccountType { get; set; } = AccountType.Personal;
+
+    // Người quản lý trực tiếp (tự tham chiếu User). Null = chủ hệ thống hoặc cá nhân độc lập.
     public int? ManagerId { get; set; }
     public User? Manager { get; set; }
     public ICollection<User> Subordinates { get; set; } = new List<User>();

@@ -8,8 +8,9 @@ public interface IActivityLogService
 {
     Task LogAsync(int userId, string action, string entityType, int entityId, string description);
 
-    /// <summary>Hoạt động gần đây cho Dashboard. Admin xem toàn bộ, user xem hành động của mình.</summary>
-    Task<List<ActivityLog>> GetRecentAsync(int userId, bool isAdmin, int count = 8);
+    /// <summary>Hoạt động gần đây cho Dashboard, lọc theo tập người dùng trong phạm vi.
+    /// userIds = null nghĩa là toàn hệ thống (chỉ dùng cho SuperAdmin).</summary>
+    Task<List<ActivityLog>> GetRecentForScopeAsync(IReadOnlyList<int>? userIds, int count = 8);
 
     /// <summary>Hoạt động liên quan tới một danh sách đối tượng (dùng cho trang chi tiết).</summary>
     Task<List<ActivityLog>> GetForEntitiesAsync(IEnumerable<(string Type, int Id)> entities, int count = 8);
@@ -35,11 +36,11 @@ public class ActivityLogService : IActivityLogService
         await _db.SaveChangesAsync();
     }
 
-    public Task<List<ActivityLog>> GetRecentAsync(int userId, bool isAdmin, int count = 8)
+    public Task<List<ActivityLog>> GetRecentForScopeAsync(IReadOnlyList<int>? userIds, int count = 8)
     {
         var query = _db.ActivityLogs.Include(a => a.User).AsQueryable();
-        if (!isAdmin)
-            query = query.Where(a => a.UserId == userId);
+        if (userIds != null)
+            query = query.Where(a => userIds.Contains(a.UserId));
 
         return query.OrderByDescending(a => a.CreatedAt).Take(count).ToListAsync();
     }

@@ -15,60 +15,120 @@ trông như sản phẩm thực tế.
 | Nền tảng | ASP.NET Core MVC (.NET 10) |
 | ORM | Entity Framework Core (Code First) |
 | Cơ sở dữ liệu | SQL Server (quản lý bằng SSMS) |
-| Xác thực | Cookie Authentication (custom User/Role) |
+| Xác thực | **ASP.NET Core Identity** (IdentityUser/IdentityRole khóa int) + cookie; vai trò phân cấp **SuperAdmin / Admin / Manager / User** |
+| Đăng nhập ngoài | **Google OAuth2** (Microsoft.AspNetCore.Authentication.Google) |
+| Quên mật khẩu | **OTP gửi qua Gmail SMTP** (MailKit) + **JWT** làm vé đặt lại mật khẩu |
 | Mật khẩu | Băm PBKDF2 (SHA-256, 100k vòng, salt ngẫu nhiên) |
 | Giao diện | Razor Views + CSS thuần (một file `site.css`) |
 
 ## 3. Chức năng chính
 
-- **Authentication:** đăng ký, đăng nhập, đăng xuất; phân quyền **User / Admin**.
-- **Workspace:** tạo / sửa / xóa / danh sách.
-- **Project:** CRUD + thanh tiến độ theo % task hoàn thành.
+- **Authentication:** đăng ký, đăng nhập, đăng xuất; phân quyền **4 cấp theo cấu
+  trúc công ty** — `SuperAdmin (3) → Admin (2) → Manager (1) → User (0)` (xem
+  `Models/Roles.cs`, tập trung hằng số + cấp bậc + quyền gán tại một nơi).
+- **Đăng nhập bằng Google (OAuth2):** nút "Đăng nhập với Google" ở trang Login; lần
+  đầu tự tạo tài khoản (Cá nhân) hoặc map vào tài khoản cùng email đã có.
+- **Quên mật khẩu (OTP qua email):** nhập email → nhận **mã OTP 6 số gửi qua Gmail**
+  → xác minh → đổi mật khẩu. OTP băm PBKDF2, hạn 10 phút, tối đa 5 lần thử; bước đổi
+  mật khẩu được bảo vệ bằng **JWT ngắn hạn** (ký HS256) thay vì session.
+- **Phân loại tài khoản (Cá nhân ↔ Nhân viên công ty):** trường `AccountType` tách
+  rõ người tự đăng ký / đăng nhập Google (*Cá nhân* — tự quản việc riêng) với nhân
+  viên do cấp quản lý tạo (*Nhân viên công ty* — nằm trong phân cấp). Trang Quản lý
+  người dùng chia 2 nhóm; bộ chọn "xem theo người" và ứng viên thành viên chỉ tính
+  nhân viên công ty.
+- **Phân cấp quản lý người dùng:** mỗi cấp chỉ quản lý cấp **ngay dưới và trong đội
+  của mình** — SuperAdmin tạo/quản lý Admin, Admin quản lý Manager, Manager quản lý
+  User. Người tạo tự trở thành **cấp trên trực tiếp** của người được tạo
+  (`ManagerId`); form không cần chọn "người quản lý". User **tự đăng ký** là *User
+  độc lập* (không trực thuộc ai) để tự quản lý công việc cá nhân.
+- **Cách ly theo đội:** Admin chỉ thấy/quản lý đội của mình (các Manager và User của
+  các Manager đó), **không thấy Admin khác hay đội của họ**. Chỉ **SuperAdmin** mới
+  xem được tổng số Admin và cấp/bỏ quyền Admin.
+- **Ràng buộc an toàn:** không tự đổi quyền/xóa chính mình; **không quản/xóa người
+  ngang hoặc cao cấp hơn** (hai Admin không xóa được nhau); **SuperAdmin không thể
+  bị xóa dưới mọi hình thức**; chỉ SuperAdmin xóa được Admin.
+- **Dashboard chỉ cho SuperAdmin & Admin:** Manager / User / User độc lập không xem
+  Dashboard (đăng nhập xong về thẳng Workspaces). SuperAdmin xem số liệu **toàn hệ
+  thống**, Admin xem số liệu **theo đội của mình**.
+- **Xem theo người (employee scope):** trên Dashboard / List / Kanban / Timeline,
+  vai trò quản lý (Manager trở lên) có **bộ chọn người** để lọc dữ liệu theo từng
+  thành viên hoặc xem "Tất cả" trong phạm vi (đội) được phép.
+- **Workspace:** tạo / sửa / xóa / danh sách + **trang chi tiết** với quản lý thành
+  viên (thêm/gỡ người trong phạm vi quản lý; hiển thị chức vụ công ty + vai trò
+  trong workspace + chủ sở hữu). Khi tạo workspace có sẵn danh sách chọn thành viên.
+- **Project:** CRUD + thanh tiến độ theo % task hoàn thành + **quản lý thành viên**
+  (bố trí người từ thành viên workspace vào project; gỡ khỏi project). Gỡ khỏi
+  workspace tự gỡ khỏi các project bên trong.
 - **Page ghi chú:** CRUD, nội dung dạng văn bản đơn giản.
 - **Task:** CRUD, giao việc, deadline, priority (Low/Medium/High), status
-  (Todo/Doing/Done); xem dạng **List** và **Kanban 3 cột** (đổi trạng thái bằng
-  dropdown ngay trên thẻ), nhãn **Overdue** cho task quá hạn.
+  (Todo/Doing/Done); xem dạng **List**, **Kanban 3 cột** (đổi trạng thái bằng
+  dropdown ngay trên thẻ) và **Timeline** (lịch ngày: xếp / đổi / bỏ lịch và chỉnh
+  thời lượng task bằng AJAX qua `ScheduledStart` + `DurationMinutes`); nhãn
+  **Overdue** cho task quá hạn.
 - **Comment:** bình luận trong task, hiển thị theo thời gian.
 - **Notification:** tự tạo khi user được giao task; đánh dấu đã đọc; badge số chưa đọc.
-- **Activity Log:** ghi nhật ký khi tạo project, tạo/sửa task, đổi trạng thái, bình luận.
+- **Activity Log:** ghi nhật ký khi tạo project, tạo/sửa task, đổi trạng thái,
+  bình luận, xếp lịch task.
 - **Dashboard:** tổng workspace / project / task, số task Todo/Doing/Done, task quá
   hạn, tỷ lệ hoàn thành, project gần đây, task sắp đến hạn, hoạt động gần đây.
-- **Phân quyền dữ liệu:** user chỉ thấy workspace/project/task mình là thành viên;
-  **Admin xem toàn bộ**.
+- **Phân quyền dữ liệu:** "xem toàn bộ" **chỉ thuộc SuperAdmin**. Các vai trò khác
+  bị giới hạn theo quyền thành viên (workspace/project) cộng phạm vi quản lý: thấy
+  thêm task được giao cho người trong đội mình (sâu tối đa 2 cấp — Admin thấy việc
+  của Manager lẫn User của họ).
 
 ## 4. Cấu trúc thư mục
 
 ```
 Cetee/
 ├── Controllers/            # Tầng điều khiển (mỏng: nhận request, trả response)
-│   ├── BaseController.cs        # CurrentUserId / IsAdmin lấy từ cookie claims
-│   ├── AccountController.cs     # Đăng ký / đăng nhập / đăng xuất
-│   ├── DashboardController.cs
+│   ├── BaseController.cs        # CurrentUserId / CurrentRole / CanSeeAllData từ cookie claims
+│   ├── HomeController.cs        # Trang gốc: điều hướng theo vai trò (SA/Admin->Dashboard, còn lại->Workspaces)
+│   ├── AccountController.cs     # Đăng ký / đăng nhập / đăng xuất / Google OAuth / quên mật khẩu (OTP)
+│   ├── DashboardController.cs   # Thống kê (chỉ SuperAdmin/Admin; có bộ chọn người - employeeId)
+│   ├── UsersController.cs       # Quản lý người dùng theo đội (SuperAdmin/Admin/Manager)
 │   ├── WorkspacesController.cs
 │   ├── ProjectsController.cs
 │   ├── PagesController.cs
-│   ├── TasksController.cs       # List + Kanban + Details + Comment + ChangeStatus
+│   ├── TasksController.cs       # List + Kanban + Timeline + Details + Comment + ChangeStatus + Schedule
 │   └── NotificationsController.cs
 ├── Models/                 # Entity (Code First)
-│   ├── User, Role, Workspace, WorkspaceMember
+│   ├── User : IdentityUser<int> (+ FullName, RoleId, ManagerId tự tham chiếu, AccountType), Role : IdentityRole<int>, Workspace, WorkspaceMember
 │   ├── Project, ProjectMember, Page
-│   ├── TaskItem, TaskComment, Notification, ActivityLog
-│   └── Enums.cs                 # TaskPriority, TaskStatus, MemberRole
+│   ├── TaskItem (+ ScheduledStart, DurationMinutes), TaskComment, Notification, ActivityLog
+│   ├── PasswordResetCode.cs     # Mã OTP đặt lại mật khẩu (băm, có hạn, giới hạn số lần)
+│   ├── Roles.cs                 # Hằng số vai trò + cấp bậc + quyền gán (Level/AssignableBy/Label)
+│   ├── EmailSettings.cs, JwtSettings.cs # POCO cấu hình (bind từ appsettings)
+│   └── Enums.cs                 # TaskPriority, TaskStatus, MemberRole, AccountType
 ├── ViewModels/             # Model cho form/trang (chứa Data Annotations validate)
+│   ├── AccountViewModels, WorkspaceViewModels, ProjectViewModels, PageViewModels
+│   ├── TaskViewModels (List/Kanban/Timeline), TaskDetailsViewModel, ProjectDetailsViewModel
+│   ├── DashboardViewModel
+│   └── UserManagementViewModels # Create/Edit/List user + EmployeeScopeResult (xem theo người)
 ├── Data/
 │   ├── AppDbContext.cs          # DbContext + cấu hình quan hệ/khóa ngoại
-│   └── DbSeeder.cs              # Seed dữ liệu mẫu khi DB trống
+│   └── DbSeeder.cs              # Bootstrap 4 vai trò + bảo đảm luôn có 1 SuperAdmin (chủ hệ thống)
 ├── Services/               # Tầng nghiệp vụ (toàn bộ logic + truy vấn nằm ở đây)
-│   ├── AuthService, PasswordHasher
-│   ├── WorkspaceService, ProjectService, PageService
+│   ├── AuthService (đăng ký/Google qua UserManager), PasswordHasher (PBKDF2, cài cả IPasswordHasher<User> của Identity)
+│   ├── AppUserClaimsPrincipalFactory # Sinh claim cookie: Name=FullName, Role từ RoleId
+│   ├── WorkspaceService, ProjectService (+ quản lý thành viên), PageService
 │   ├── TaskService, NotificationService, ActivityLogService, DashboardService
+│   ├── UserService              # Phân cấp 4 tầng: CanManage/VisibleUsers theo đội, ResolveScope (xem theo người)
+│   ├── EmailService             # Gửi email qua Gmail SMTP (MailKit, cổng 465 SSL)
+│   ├── JwtService               # Ký/xác thực JWT (vé đặt lại mật khẩu)
+│   ├── PasswordResetService     # Luồng quên mật khẩu: tạo/gửi OTP, xác minh, đổi mật khẩu
 │   └── DisplayHelpers.cs        # Đổi enum -> nhãn tiếng Việt + class CSS
 ├── ViewComponents/         # NotificationBadge (đếm thông báo chưa đọc)
 ├── Views/                  # Razor views + layout sidebar
-├── Migrations/             # EF Core migration (InitialCreate)
+│   ├── Account/ (Login, Register, ForgotPassword, VerifyOtp, ResetPassword)
+│   ├── Tasks/ (Index, Board, Timeline, Details, Create, Edit, _Form)
+│   ├── Users/ (Index, Create, Edit, _UserTable)
+│   ├── Workspaces/ (Index, Details, Create, Edit, _Form), Projects/ (… Details)
+│   └── Shared/ (_Layout, _Avatar, _EmployeePicker, Error, Components/)
+├── Migrations/             # InitialCreate, AddTaskScheduling, AddManagerHierarchy, AddPasswordReset, AddAccountType, AddIdentity
+├── seed-data.sql           # Script SSMS nạp dữ liệu mẫu công ty (tùy chọn)
 ├── wwwroot/css/site.css    # Toàn bộ CSS (navy + mint + xám, không rải rác)
-├── appsettings.json        # Connection string
-└── Program.cs              # DI, cookie auth, pipeline, auto-migrate + seed
+├── appsettings.json        # Connection string + cấu hình Email/Jwt/Google (secret để ở appsettings.Development.json)
+└── Program.cs              # DI, ASP.NET Core Identity + Google, pipeline, auto-migrate + seed
 ```
 
 ### Kiến trúc
@@ -90,20 +150,28 @@ Request → Controller → Service → AppDbContext (EF Core) → SQL Server
 
 | Bảng | Quan hệ chính |
 |------|---------------|
-| **Role** (1) — (n) **User** | mỗi user có 1 role (Admin/User) |
+| **Role** (1) — (n) **User** | mỗi user có 1 role (SuperAdmin / Admin / Manager / User) |
+| **User** (tự tham chiếu) | `ManagerId` → User (nullable): cấp trên trực tiếp trong chuỗi SuperAdmin→Admin→Manager→User; `AccountType` = Personal/Company tách Cá nhân với Nhân viên công ty |
 | **Workspace** | Owner → User; (1)—(n) Project |
 | **WorkspaceMember** | nối User ↔ Workspace (n-n) + MemberRole |
 | **Project** | thuộc 1 Workspace; (1)—(n) Page, Task |
 | **ProjectMember** | nối User ↔ Project (n-n) + MemberRole |
 | **Page** | thuộc 1 Project (ghi chú) |
-| **TaskItem** | thuộc 1 Project; Assignee → User (nullable) |
+| **TaskItem** | thuộc 1 Project; Assignee → User (nullable); có `ScheduledStart` + `DurationMinutes` cho Timeline |
 | **TaskComment** | thuộc 1 Task + 1 User |
 | **Notification** | thuộc 1 User; có thể trỏ tới 1 Task |
 | **ActivityLog** | UserId, Action, EntityType, EntityId, Description, CreatedAt |
+| **PasswordResetCode** | thuộc 1 User; CodeHash (OTP đã băm), ExpiresAt, Consumed, Attempts |
 
 > Bảng task đặt tên **`TaskItem`** để tránh trùng `System.Threading.Tasks.Task`.
 > Khóa ngoại cấu hình rõ ràng trong `AppDbContext`; dùng `Restrict`/`SetNull` ở
-> những chỗ cần để tránh lỗi *multiple cascade paths* của SQL Server.
+> những chỗ cần để tránh lỗi *multiple cascade paths* của SQL Server (quan hệ
+> Manager tự tham chiếu dùng `Restrict`; khi xóa Manager sẽ gỡ liên kết nhân viên).
+>
+> **ASP.NET Core Identity** (khóa int): `User`/`Role` kế thừa IdentityUser/IdentityRole,
+> bảng vẫn giữ tên `Users`/`Roles`; Identity thêm các bảng `AspNetUserClaims`,
+> `AspNetUserLogins` (đăng nhập Google), `AspNetUserRoles`, `AspNetUserTokens`,
+> `AspNetRoleClaims`. Vai trò dùng FK trực tiếp `User.RoleId` (1 vai trò/người).
 
 ## 6. Cấu hình SQL Server
 
@@ -120,6 +188,29 @@ Ví dụ `Server=`:
 - SQL Server mặc định:       `Server=.;...` hoặc `Server=localhost;...`
 - Tài khoản SQL:             `Server=localhost;User Id=sa;Password=MatKhau;...`
 
+### 6.1. Cấu hình Email (OTP) / JWT / Google
+
+Cấu trúc nằm trong `appsettings.json`; **các secret** (mật khẩu SMTP, khóa JWT,
+Client Secret của Google) để trong **`appsettings.Development.json`** — file này đã
+được **`.gitignore`** để không bị đẩy lên git:
+
+```json
+// appsettings.Development.json
+{
+  "Email":  { "Password": "<App Password 16 ký tự của Gmail>" },
+  "Jwt":    { "Key": "<chuỗi bí mật dài để ký JWT>" },
+  "Authentication": {
+    "Google": { "ClientId": "<...>.apps.googleusercontent.com", "ClientSecret": "GOCSPX-..." }
+  }
+}
+```
+
+- **Gmail SMTP:** bật 2FA → tạo **App Password** tại <https://myaccount.google.com/apppasswords>.
+  *(App Password chỉ để **gửi mail**, khác hoàn toàn với đăng nhập Google.)*
+- **Google OAuth:** tạo OAuth Client ID (Web application) tại Google Cloud Console;
+  thêm **Authorized redirect URI** = `http://localhost:5259/signin-google` (đúng cổng app chạy).
+- Nếu bỏ trống `ClientId` → app vẫn chạy, chỉ là nút Google không hoạt động (báo "chưa cấu hình").
+
 ## 7. Lệnh chạy migration
 
 Cài công cụ EF (một lần duy nhất):
@@ -127,11 +218,15 @@ Cài công cụ EF (một lần duy nhất):
 dotnet tool install --global dotnet-ef
 ```
 
-Tạo database từ migration có sẵn:
+Tạo database từ các migration có sẵn (`InitialCreate`, `AddTaskScheduling`,
+`AddManagerHierarchy`, `AddPasswordReset`, `AddAccountType`, `AddIdentity`):
 ```bash
 dotnet ef database update
 ```
 
+> Phân quyền 4 cấp **không cần migration mới**: vai trò là dữ liệu dòng trong bảng
+> `Roles`, còn quan hệ phân cấp dùng cột `ManagerId` đã có sẵn.
+>
 > Ứng dụng cũng **tự động** `MigrateAsync()` + seed khi khởi động (xem `Program.cs`),
 > nên có thể bỏ qua bước trên và chạy thẳng `dotnet run`.
 
@@ -141,18 +236,42 @@ dotnet ef migrations add InitialCreate
 dotnet ef database update
 ```
 
-## 8. Tài khoản demo
+## 8. Tài khoản & dữ liệu mẫu
+
+Khi khởi động, `DbSeeder` chỉ **bootstrap** tối thiểu để đăng nhập lần đầu: 4 vai
+trò (SuperAdmin / Admin / Manager / User) và bảo đảm luôn có **đúng một SuperAdmin**
+(chủ hệ thống, cấp cao nhất, không thể bị xóa):
 
 | Vai trò | Email | Mật khẩu |
 |---------|-------|----------|
-| Admin | admin@example.com | Admin@123 |
-| User | user1@example.com | User@123 |
-| User | user2@example.com | User@123 |
+| SuperAdmin | admin@example.com | Admin@123 |
 
-Dữ liệu mẫu: 2 workspace (chính: **Website Graduation Project**), 4 project
-(UI Design, Backend API, Final Report, Workshop C#), 10 task chia Todo/Doing/Done
-(có 1 task quá hạn để minh họa Overdue), 3 page ghi chú (Project Overview,
-Technical Documentation, Meeting Notes), comment, notification và activity log.
+> Với DB cũ đã có tài khoản Admin nhưng chưa có SuperAdmin, `DbSeeder` **tự nâng**
+> `admin@example.com` (hoặc tài khoản đầu tiên) lên SuperAdmin khi khởi động — không
+> cần tạo lại dữ liệu.
+
+`DbSeeder` **không** seed workspace/project/task — toàn bộ dữ liệu nghiệp vụ do
+người dùng tạo qua giao diện (hoặc nạp bằng script bên dưới).
+
+### Dữ liệu mẫu tùy chọn (`seed-data.sql`)
+
+Để có sẵn dữ liệu minh họa một **công ty đầy đủ 4 tầng**, mở **`seed-data.sql`**
+trong SSMS (trỏ tới `CeteeDb`) và Execute. Script chỉ chèn khi DB chưa có Workspace
+nào (tránh trùng lặp). Tài khoản (mật khẩu `Admin@123` cho SuperAdmin, `User@123` cho còn lại):
+
+| Vai trò | Email | Loại |
+|---------|-------|------|
+| SuperAdmin | admin@example.com | Nhân viên công ty |
+| Admin | khoa.phan@cetee.vn (Kỹ thuật), chau.ngo@cetee.vn (Kinh doanh) | Nhân viên công ty |
+| Manager | quan.le@cetee.vn (Dev), dang.vu@cetee.vn (QA), trang.do@cetee.vn (MKT) | Nhân viên công ty |
+| User | ducanh.tran, mai.vo, huy.bui, nga.phan, bao.ly, nhi.ho, kiet.dinh @cetee.vn | Nhân viên công ty |
+| User độc lập | ha.pham@cetee.vn, lam.trinh@cetee.vn | Cá nhân |
+
+Kèm theo: **15 người dùng** (1 SA + 2 Admin + 3 Manager + 7 nhân viên + 2 cá nhân),
+**3 workspace** có thành viên, **6 project** có thành viên, **18 task** chia
+Todo/Doing/Done (có task quá hạn minh họa **Overdue** và task đã xếp lịch trên
+**Timeline**), page ghi chú, comment, notification, activity log — minh họa đầy đủ
+phân cấp, quản lý thành viên và tách Cá nhân/Nhân viên.
 
 ## 9. Hướng dẫn chạy project
 
@@ -163,21 +282,37 @@ dotnet run
 ```
 
 Mở trình duyệt tới địa chỉ in ở console (ví dụ `http://localhost:5259`).
-Lần chạy đầu sẽ tự tạo database `CeteeDb` và nạp dữ liệu mẫu, sau đó đăng nhập
-bằng tài khoản demo ở mục 8.
+Lần chạy đầu sẽ tự tạo database `CeteeDb` cùng tài khoản SuperAdmin bootstrap
+(`admin@example.com` / `Admin@123`). Muốn có dữ liệu minh họa, nạp thêm
+`seed-data.sql` (mục 8) rồi đăng nhập bằng các tài khoản ở đó.
 
 ## 10. Ghi chú dành cho báo cáo đồ án
 
 - **Điểm nhấn kiến trúc:** tách 3 tầng rõ ràng (Controller → Service → Data),
   Controller mỏng, logic tập trung ở Service — dễ trình bày và dễ chấm.
-- **Bảo mật:** mật khẩu băm PBKDF2 (không lưu plain text); `[Authorize]` cho mọi
-  controller cần đăng nhập; lọc dữ liệu theo quyền thành viên, Admin xem toàn bộ.
+- **Bảo mật & phân quyền phân cấp:** mật khẩu băm PBKDF2 (không lưu plain text);
+  `[Authorize]` cho mọi controller cần đăng nhập, `[Authorize(Roles=...)]` giới hạn
+  Dashboard (SuperAdmin/Admin) và trang quản lý người dùng (SuperAdmin/Admin/Manager);
+  "xem toàn bộ" chỉ thuộc SuperAdmin, các vai trò khác bị giới hạn theo thành viên +
+  đội của mình. Ràng buộc an toàn: SuperAdmin bất khả xóa, hai Admin không xóa được
+  nhau, không tự đổi quyền/xóa chính mình.
+- **Phân cấp tổ chức theo công ty:** `SuperAdmin → Admin → Manager → User` qua
+  `ManagerId` tự tham chiếu; mỗi cấp tạo/quản lý cấp ngay dưới trong đội mình, cộng
+  bộ chọn "xem theo người" trên Dashboard/List/Kanban/Timeline — điểm nhấn vượt trên
+  CRUD cơ bản. Logic vai trò gom tại `Models/Roles.cs` (không hardcode rải rác).
+- **Bảo mật nâng cao (điểm cộng thực tế):** đăng nhập **Google OAuth2**; **quên mật
+  khẩu gửi OTP qua Gmail** (SMTP/MailKit) với mã băm + hạn dùng + giới hạn lần thử;
+  **JWT** ký HS256 làm vé bảo vệ bước đổi mật khẩu; secret tách khỏi mã nguồn
+  (`appsettings.Development.json` đã gitignore).
+- **Tách Cá nhân / Nhân viên công ty:** trường `AccountType` phân biệt rõ hai loại
+  tài khoản, phục vụ chuẩn hóa theo mô hình công ty.
 - **Validation:** Data Annotations trên ViewModel (title bắt buộc, comment không
   rỗng, email hợp lệ…) + kiểm tra nghiệp vụ (deadline không được ở quá khứ khi
   tạo task mới, project phải thuộc workspace, page phải thuộc project).
 - **Nhật ký hoạt động (ActivityLog):** minh họa khả năng theo dõi thao tác người
   dùng — điểm cộng khi báo cáo.
-- **Phạm vi có chủ đích:** không làm realtime, drag-drop, block editor, chat hay
-  upload file để tập trung hoàn thiện CRUD, UI, database và phân quyền.
+- **Phạm vi có chủ đích:** không làm realtime, block editor, chat hay upload file để
+  tập trung hoàn thiện CRUD, UI, database, phân quyền và lịch ngày (Timeline có kéo
+  thả/xếp lịch task bằng AJAX).
 - **Gợi ý slide:** sơ đồ ERD (mục 5), sơ đồ luồng MVC (mục 4), ảnh chụp Dashboard,
-  Kanban và trang chi tiết Project/Task.
+  Kanban, Timeline và trang chi tiết Project/Task.

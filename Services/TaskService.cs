@@ -8,19 +8,19 @@ namespace Cetee.Services;
 
 public interface ITaskService
 {
-    Task<List<TaskItem>> GetForUserAsync(int userId, bool isAdmin, int? projectId, TaskStatus? status, string? search = null, IReadOnlyList<int>? assigneeFilter = null);
-    Task<TaskItem?> GetByIdForUserAsync(int id, int userId, bool isAdmin);
-    Task<TaskDetailsViewModel?> GetDetailsAsync(int id, int userId, bool isAdmin);
-    Task<TaskItem?> CreateAsync(TaskFormViewModel model, int userId, bool isAdmin);
-    Task<bool> UpdateAsync(TaskFormViewModel model, int userId, bool isAdmin);
-    Task<int?> DeleteAsync(int id, int userId, bool isAdmin);
-    Task<bool> ChangeStatusAsync(int id, TaskStatus status, int userId, bool isAdmin);
-    Task<bool> AddCommentAsync(int taskId, int userId, bool isAdmin, string content);
-    Task<List<Project>> GetAccessibleProjectsAsync(int userId, bool isAdmin);
+    Task<List<TaskItem>> GetForUserAsync(int userId, bool seeAll, int? projectId, TaskStatus? status, string? search = null, IReadOnlyList<int>? assigneeFilter = null);
+    Task<TaskItem?> GetByIdForUserAsync(int id, int userId, bool seeAll);
+    Task<TaskDetailsViewModel?> GetDetailsAsync(int id, int userId, bool seeAll);
+    Task<TaskItem?> CreateAsync(TaskFormViewModel model, int userId, bool seeAll);
+    Task<bool> UpdateAsync(TaskFormViewModel model, int userId, bool seeAll);
+    Task<int?> DeleteAsync(int id, int userId, bool seeAll);
+    Task<bool> ChangeStatusAsync(int id, TaskStatus status, int userId, bool seeAll);
+    Task<bool> AddCommentAsync(int taskId, int userId, bool seeAll, string content);
+    Task<List<Project>> GetAccessibleProjectsAsync(int userId, bool seeAll);
     Task<List<User>> GetProjectMembersAsync(int projectId);
 
-    Task<TimelineViewModel> GetTimelineAsync(int userId, bool isAdmin, DateTime date, IReadOnlyList<int>? assigneeFilter = null);
-    Task<bool> ScheduleAsync(int id, bool changeStart, DateTime? start, int? duration, int userId, bool isAdmin);
+    Task<TimelineViewModel> GetTimelineAsync(int userId, bool seeAll, DateTime date, IReadOnlyList<int>? assigneeFilter = null);
+    Task<bool> ScheduleAsync(int id, bool changeStart, DateTime? start, int? duration, int userId, bool seeAll);
 }
 
 /// <summary>Nghiệp vụ quản lý task: giao việc, đổi trạng thái, bình luận và ghi nhật ký.</summary>
@@ -37,22 +37,25 @@ public class TaskService : ITaskService
         _activity = activity;
     }
 
-    private IQueryable<TaskItem> Accessible(int userId, bool isAdmin)
+    private IQueryable<TaskItem> Accessible(int userId, bool seeAll)
     {
         var query = _db.Tasks.AsQueryable();
-        if (isAdmin) return query;
+        if (seeAll) return query; // Chỉ SuperAdmin xem toàn bộ.
 
-        // User thường thấy task: trong workspace mình tham gia, HOẶC được giao cho mình,
-        // HOẶC được giao cho nhân viên trực thuộc mình (quản lý xem việc của nhân viên).
+        // Người dùng thấy task: trong workspace mình tham gia, HOẶC được giao cho mình,
+        // HOẶC được giao cho người trong đội mình (cấp dưới trực tiếp hoặc qua một cấp
+        // trung gian — Manager thấy việc của User, Admin thấy việc của Manager lẫn User).
         return query.Where(t =>
             t.Project.Workspace.Members.Any(m => m.UserId == userId)
             || t.AssigneeId == userId
-            || (t.Assignee != null && t.Assignee.ManagerId == userId));
+            || (t.Assignee != null && (
+                    t.Assignee.ManagerId == userId
+                    || (t.Assignee.Manager != null && t.Assignee.Manager.ManagerId == userId))));
     }
 
-    public async Task<List<TaskItem>> GetForUserAsync(int userId, bool isAdmin, int? projectId, TaskStatus? status, string? search = null, IReadOnlyList<int>? assigneeFilter = null)
+    public async Task<List<TaskItem>> GetForUserAsync(int userId, bool seeAll, int? projectId, TaskStatus? status, string? search = null, IReadOnlyList<int>? assigneeFilter = null)
     {
-        var query = Accessible(userId, isAdmin)
+        var query = Accessible(userId, seeAll)
             .Include(t => t.Project)
             .Include(t => t.Assignee)
             .AsQueryable();
@@ -73,16 +76,16 @@ public class TaskService : ITaskService
             .ToListAsync();
     }
 
-    public Task<TaskItem?> GetByIdForUserAsync(int id, int userId, bool isAdmin) =>
-        Accessible(userId, isAdmin)
+    public Task<TaskItem?> GetByIdForUserAsync(int id, int userId, bool seeAll) =>
+        Accessible(userId, seeAll)
             .Include(t => t.Project)
             .Include(t => t.Assignee)
             .Include(t => t.Comments).ThenInclude(c => c.User)
             .FirstOrDefaultAsync(t => t.Id == id);
 
-    public async Task<TaskDetailsViewModel?> GetDetailsAsync(int id, int userId, bool isAdmin)
+    public async Task<TaskDetailsViewModel?> GetDetailsAsync(int id, int userId, bool seeAll)
     {
-        var task = await GetByIdForUserAsync(id, userId, isAdmin);
+        var task = await GetByIdForUserAsync(id, userId, seeAll);
         if (task is null) return null;
 
         var comments = task.Comments.OrderBy(c => c.CreatedAt).ToList();
@@ -96,9 +99,9 @@ public class TaskService : ITaskService
         };
     }
 
-    public async Task<TaskItem?> CreateAsync(TaskFormViewModel model, int userId, bool isAdmin)
+    public async Task<TaskItem?> CreateAsync(TaskFormViewModel model, int userId, bool seeAll)
     {
-        bool hasAccess = isAdmin
+        bool hasAccess = seeAll
             ? await _db.Projects.AnyAsync(p => p.Id == model.ProjectId)
             : await _db.Projects.AnyAsync(p => p.Id == model.ProjectId && p.Workspace.Members.Any(m => m.UserId == userId));
         if (!hasAccess) return null;
@@ -126,9 +129,9 @@ public class TaskService : ITaskService
         return task;
     }
 
-    public async Task<bool> UpdateAsync(TaskFormViewModel model, int userId, bool isAdmin)
+    public async Task<bool> UpdateAsync(TaskFormViewModel model, int userId, bool seeAll)
     {
-        var task = await Accessible(userId, isAdmin).FirstOrDefaultAsync(t => t.Id == model.Id);
+        var task = await Accessible(userId, seeAll).FirstOrDefaultAsync(t => t.Id == model.Id);
         if (task is null) return false;
 
         int? previousAssignee = task.AssigneeId;
@@ -151,9 +154,9 @@ public class TaskService : ITaskService
         return true;
     }
 
-    public async Task<int?> DeleteAsync(int id, int userId, bool isAdmin)
+    public async Task<int?> DeleteAsync(int id, int userId, bool seeAll)
     {
-        var task = await Accessible(userId, isAdmin).FirstOrDefaultAsync(t => t.Id == id);
+        var task = await Accessible(userId, seeAll).FirstOrDefaultAsync(t => t.Id == id);
         if (task is null) return null;
 
         int projectId = task.ProjectId;
@@ -162,9 +165,9 @@ public class TaskService : ITaskService
         return projectId;
     }
 
-    public async Task<bool> ChangeStatusAsync(int id, TaskStatus status, int userId, bool isAdmin)
+    public async Task<bool> ChangeStatusAsync(int id, TaskStatus status, int userId, bool seeAll)
     {
-        var task = await Accessible(userId, isAdmin).FirstOrDefaultAsync(t => t.Id == id);
+        var task = await Accessible(userId, seeAll).FirstOrDefaultAsync(t => t.Id == id);
         if (task is null) return false;
 
         var oldStatus = task.Status;
@@ -176,9 +179,9 @@ public class TaskService : ITaskService
         return true;
     }
 
-    public async Task<bool> AddCommentAsync(int taskId, int userId, bool isAdmin, string content)
+    public async Task<bool> AddCommentAsync(int taskId, int userId, bool seeAll, string content)
     {
-        var task = await Accessible(userId, isAdmin).FirstOrDefaultAsync(t => t.Id == taskId);
+        var task = await Accessible(userId, seeAll).FirstOrDefaultAsync(t => t.Id == taskId);
         if (task is null) return false;
 
         _db.TaskComments.Add(new TaskComment
@@ -193,9 +196,9 @@ public class TaskService : ITaskService
         return true;
     }
 
-    public Task<List<Project>> GetAccessibleProjectsAsync(int userId, bool isAdmin)
+    public Task<List<Project>> GetAccessibleProjectsAsync(int userId, bool seeAll)
     {
-        var query = isAdmin
+        var query = seeAll
             ? _db.Projects
             : _db.Projects.Where(p => p.Workspace.Members.Any(m => m.UserId == userId));
 
@@ -208,12 +211,12 @@ public class TaskService : ITaskService
             .Select(m => m.User)
             .ToListAsync();
 
-    public async Task<TimelineViewModel> GetTimelineAsync(int userId, bool isAdmin, DateTime date, IReadOnlyList<int>? assigneeFilter = null)
+    public async Task<TimelineViewModel> GetTimelineAsync(int userId, bool seeAll, DateTime date, IReadOnlyList<int>? assigneeFilter = null)
     {
         var dayStart = date.Date;
         var dayEnd = dayStart.AddDays(1);
 
-        var baseQuery = Accessible(userId, isAdmin)
+        var baseQuery = Accessible(userId, seeAll)
             .Include(t => t.Project)
             .Include(t => t.Assignee)
             .AsQueryable();
@@ -237,9 +240,9 @@ public class TaskService : ITaskService
         return new TimelineViewModel { Date = dayStart, Scheduled = scheduled, Unscheduled = unscheduled };
     }
 
-    public async Task<bool> ScheduleAsync(int id, bool changeStart, DateTime? start, int? duration, int userId, bool isAdmin)
+    public async Task<bool> ScheduleAsync(int id, bool changeStart, DateTime? start, int? duration, int userId, bool seeAll)
     {
-        var task = await Accessible(userId, isAdmin).FirstOrDefaultAsync(t => t.Id == id);
+        var task = await Accessible(userId, seeAll).FirstOrDefaultAsync(t => t.Id == id);
         if (task is null) return false;
 
         if (changeStart) task.ScheduledStart = start;

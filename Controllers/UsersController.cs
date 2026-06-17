@@ -1,12 +1,17 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Cetee.Models;
 using Cetee.Services;
 using Cetee.ViewModels;
 
 namespace Cetee.Controllers;
 
-/// <summary>Quản lý người dùng và phân quyền — chỉ Admin được truy cập.</summary>
-[Authorize(Roles = "Admin")]
+/// <summary>
+/// Quản lý người dùng theo phân cấp công ty. SuperAdmin/Admin/Manager đều truy cập
+/// được nhưng mỗi người chỉ thấy và thao tác trong "đội" của mình (xem <see cref="UserService"/>).
+/// </summary>
+[Authorize(Roles = $"{Roles.SuperAdmin},{Roles.Admin},{Roles.Manager}")]
 public class UsersController : BaseController
 {
     private readonly IUserService _users;
@@ -16,15 +21,15 @@ public class UsersController : BaseController
     // GET /Users
     public async Task<IActionResult> Index()
     {
-        var list = await _users.GetAllAsync(CurrentUserId);
-        return View(list);
+        var model = await _users.GetIndexAsync(CurrentUserId, CurrentRole);
+        return View(model);
     }
 
     [HttpGet]
-    public async Task<IActionResult> Create()
+    public IActionResult Create()
     {
-        var model = new CreateUserViewModel { ManagerOptions = await _users.GetManagerCandidatesAsync() };
-        return View(model);
+        if (!Roles.AssignableBy(CurrentRole).Any()) return Forbid();
+        return View(new CreateUserViewModel { RoleOptions = AssignableRoleOptions(null) });
     }
 
     [HttpPost]
@@ -33,15 +38,15 @@ public class UsersController : BaseController
     {
         if (!ModelState.IsValid)
         {
-            model.ManagerOptions = await _users.GetManagerCandidatesAsync();
+            model.RoleOptions = AssignableRoleOptions(model.Role);
             return View(model);
         }
 
-        var (ok, error) = await _users.CreateAsync(model);
+        var (ok, error) = await _users.CreateAsync(model, CurrentUserId, CurrentRole);
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error!);
-            model.ManagerOptions = await _users.GetManagerCandidatesAsync();
+            model.RoleOptions = AssignableRoleOptions(model.Role);
             return View(model);
         }
 
@@ -52,9 +57,8 @@ public class UsersController : BaseController
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var vm = await _users.GetForEditAsync(id, CurrentUserId);
+        var vm = await _users.GetForEditAsync(id, CurrentUserId, CurrentRole);
         if (vm is null) return NotFound();
-        vm.ManagerOptions = await _users.GetManagerCandidatesAsync();
         return View(vm);
     }
 
@@ -62,22 +66,22 @@ public class UsersController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(EditUserViewModel model)
     {
-        // Mật khẩu chỉ bắt buộc tối thiểu 6 ký tự khi Admin có nhập (để trống = giữ nguyên).
+        // Mật khẩu chỉ bắt buộc tối thiểu 6 ký tự khi có nhập (để trống = giữ nguyên).
         if (!string.IsNullOrEmpty(model.NewPassword) && model.NewPassword.Length < 6)
             ModelState.AddModelError(nameof(model.NewPassword), "Mật khẩu tối thiểu 6 ký tự.");
 
         model.IsSelf = model.Id == CurrentUserId;
         if (!ModelState.IsValid)
         {
-            model.ManagerOptions = await _users.GetManagerCandidatesAsync();
+            model.RoleOptions = AssignableRoleOptions(model.Role);
             return View(model);
         }
 
-        var (ok, error) = await _users.UpdateAsync(model, CurrentUserId);
+        var (ok, error) = await _users.UpdateAsync(model, CurrentUserId, CurrentRole);
         if (!ok)
         {
             ModelState.AddModelError(string.Empty, error!);
-            model.ManagerOptions = await _users.GetManagerCandidatesAsync();
+            model.RoleOptions = AssignableRoleOptions(model.Role);
             return View(model);
         }
 
@@ -89,9 +93,9 @@ public class UsersController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangeRole(int id, string role)
     {
-        var (ok, error) = await _users.SetRoleAsync(id, role, CurrentUserId);
+        var (ok, error) = await _users.SetRoleAsync(id, role, CurrentUserId, CurrentRole);
         if (ok)
-            TempData["Success"] = role == "Admin" ? "Đã cấp quyền Admin." : "Đã chuyển về vai trò User.";
+            TempData["Success"] = role == Roles.Admin ? "Đã cấp quyền Admin." : "Đã chuyển về vai trò User.";
         else
             TempData["Error"] = error;
 
@@ -102,7 +106,7 @@ public class UsersController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        var (ok, error) = await _users.DeleteAsync(id, CurrentUserId);
+        var (ok, error) = await _users.DeleteAsync(id, CurrentUserId, CurrentRole);
         if (ok)
             TempData["Success"] = "Đã xóa người dùng.";
         else
@@ -110,4 +114,10 @@ public class UsersController : BaseController
 
         return RedirectToAction(nameof(Index));
     }
+
+    // Các vai trò người đang đăng nhập được phép gán (luôn thấp hơn cấp của họ).
+    private List<SelectListItem> AssignableRoleOptions(string? selected) =>
+        Roles.AssignableBy(CurrentRole)
+            .Select(r => new SelectListItem(Roles.Label(r), r, r == selected))
+            .ToList();
 }

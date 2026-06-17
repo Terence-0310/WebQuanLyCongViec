@@ -7,10 +7,10 @@ namespace Cetee.Services;
 
 public interface IPageService
 {
-    Task<Page?> GetByIdForUserAsync(int id, int userId, bool isAdmin);
-    Task<Page?> CreateAsync(PageFormViewModel model, int userId, bool isAdmin);
-    Task<bool> UpdateAsync(PageFormViewModel model, int userId, bool isAdmin);
-    Task<int?> DeleteAsync(int id, int userId, bool isAdmin); // trả về ProjectId để điều hướng
+    Task<Page?> GetByIdForUserAsync(int id, int userId, bool seeAll);
+    Task<Page?> CreateAsync(PageFormViewModel model, int userId, bool seeAll);
+    Task<bool> UpdateAsync(PageFormViewModel model, int userId, bool seeAll);
+    Task<int?> DeleteAsync(int id, int userId, bool seeAll); // trả về ProjectId để điều hướng
 }
 
 /// <summary>Nghiệp vụ quản lý page ghi chú trong project.</summary>
@@ -20,25 +20,25 @@ public class PageService : IPageService
 
     public PageService(AppDbContext db) => _db = db;
 
-    private IQueryable<Page> Accessible(int userId, bool isAdmin)
+    private IQueryable<Page> Accessible(int userId, bool seeAll)
     {
         var query = _db.Pages.AsQueryable();
-        return isAdmin ? query : query.Where(p => p.Project.Workspace.Members.Any(m => m.UserId == userId));
+        return seeAll ? query : query.Where(p => p.Project.Workspace.Members.Any(m => m.UserId == userId));
     }
 
     // Kiểm tra user có quyền với project chứa page hay không.
-    private Task<bool> CanAccessProject(int projectId, int userId, bool isAdmin)
+    private Task<bool> CanAccessProject(int projectId, int userId, bool seeAll)
     {
-        if (isAdmin) return _db.Projects.AnyAsync(p => p.Id == projectId);
+        if (seeAll) return _db.Projects.AnyAsync(p => p.Id == projectId);
         return _db.Projects.AnyAsync(p => p.Id == projectId && p.Workspace.Members.Any(m => m.UserId == userId));
     }
 
-    public Task<Page?> GetByIdForUserAsync(int id, int userId, bool isAdmin) =>
-        Accessible(userId, isAdmin).Include(p => p.Project).FirstOrDefaultAsync(p => p.Id == id);
+    public Task<Page?> GetByIdForUserAsync(int id, int userId, bool seeAll) =>
+        Accessible(userId, seeAll).Include(p => p.Project).FirstOrDefaultAsync(p => p.Id == id);
 
-    public async Task<Page?> CreateAsync(PageFormViewModel model, int userId, bool isAdmin)
+    public async Task<Page?> CreateAsync(PageFormViewModel model, int userId, bool seeAll)
     {
-        if (!await CanAccessProject(model.ProjectId, userId, isAdmin)) return null;
+        if (!await CanAccessProject(model.ProjectId, userId, seeAll)) return null;
 
         var page = new Page
         {
@@ -51,9 +51,9 @@ public class PageService : IPageService
         return page;
     }
 
-    public async Task<bool> UpdateAsync(PageFormViewModel model, int userId, bool isAdmin)
+    public async Task<bool> UpdateAsync(PageFormViewModel model, int userId, bool seeAll)
     {
-        var page = await GetByIdForUserAsync(model.Id, userId, isAdmin);
+        var page = await GetByIdForUserAsync(model.Id, userId, seeAll);
         if (page is null) return false;
 
         page.Title = model.Title.Trim();
@@ -63,9 +63,9 @@ public class PageService : IPageService
         return true;
     }
 
-    public async Task<int?> DeleteAsync(int id, int userId, bool isAdmin)
+    public async Task<int?> DeleteAsync(int id, int userId, bool seeAll)
     {
-        var page = await GetByIdForUserAsync(id, userId, isAdmin);
+        var page = await GetByIdForUserAsync(id, userId, seeAll);
         if (page is null) return null;
 
         int projectId = page.ProjectId;

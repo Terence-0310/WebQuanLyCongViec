@@ -23,7 +23,7 @@ public class TasksController : BaseController
     public async Task<IActionResult> Index(int? projectId, TaskStatus? status, string? q, int? employeeId)
     {
         var scope = await _users.ResolveScopeAsync(CurrentUserId, CurrentRole, employeeId);
-        var tasks = await _tasks.GetForUserAsync(CurrentUserId, IsAdmin, projectId, status, q, scope.AssigneeFilter);
+        var tasks = await _tasks.GetForUserAsync(CurrentUserId, CanSeeAllData, projectId, status, q, scope.AssigneeFilter);
         var model = new TaskListViewModel
         {
             Tasks = tasks,
@@ -40,7 +40,7 @@ public class TasksController : BaseController
     public async Task<IActionResult> Board(int? projectId, int? employeeId)
     {
         var scope = await _users.ResolveScopeAsync(CurrentUserId, CurrentRole, employeeId);
-        var tasks = await _tasks.GetForUserAsync(CurrentUserId, IsAdmin, projectId, null, null, scope.AssigneeFilter);
+        var tasks = await _tasks.GetForUserAsync(CurrentUserId, CanSeeAllData, projectId, null, null, scope.AssigneeFilter);
         var model = new KanbanViewModel
         {
             ProjectId = projectId,
@@ -58,7 +58,7 @@ public class TasksController : BaseController
     {
         var day = (date ?? DateTime.Today).Date;
         var scope = await _users.ResolveScopeAsync(CurrentUserId, CurrentRole, employeeId);
-        var model = await _tasks.GetTimelineAsync(CurrentUserId, IsAdmin, day, scope.AssigneeFilter);
+        var model = await _tasks.GetTimelineAsync(CurrentUserId, CanSeeAllData, day, scope.AssigneeFilter);
         model.Scope = scope;
         return View(model);
     }
@@ -78,7 +78,7 @@ public class TasksController : BaseController
             when = parsed;
         }
 
-        var ok = await _tasks.ScheduleAsync(id, changeStart, when, duration, CurrentUserId, IsAdmin);
+        var ok = await _tasks.ScheduleAsync(id, changeStart, when, duration, CurrentUserId, CanSeeAllData);
         if (!ok) return NotFound(new { ok = false });
         return Json(new { ok = true });
     }
@@ -86,7 +86,7 @@ public class TasksController : BaseController
     // GET /Tasks/Details/{id}
     public async Task<IActionResult> Details(int id)
     {
-        var model = await _tasks.GetDetailsAsync(id, CurrentUserId, IsAdmin);
+        var model = await _tasks.GetDetailsAsync(id, CurrentUserId, CanSeeAllData);
         if (model is null) return NotFound();
         return View(model);
     }
@@ -113,7 +113,7 @@ public class TasksController : BaseController
             return View(model);
         }
 
-        var task = await _tasks.CreateAsync(model, CurrentUserId, IsAdmin);
+        var task = await _tasks.CreateAsync(model, CurrentUserId, CanSeeAllData);
         if (task is null)
         {
             ModelState.AddModelError(string.Empty, "Bạn không có quyền tạo task trong project này.");
@@ -127,7 +127,7 @@ public class TasksController : BaseController
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var task = await _tasks.GetByIdForUserAsync(id, CurrentUserId, IsAdmin);
+        var task = await _tasks.GetByIdForUserAsync(id, CurrentUserId, CanSeeAllData);
         if (task is null) return NotFound();
 
         var model = new TaskFormViewModel
@@ -156,7 +156,7 @@ public class TasksController : BaseController
             return View(model);
         }
 
-        if (!await _tasks.UpdateAsync(model, CurrentUserId, IsAdmin)) return NotFound();
+        if (!await _tasks.UpdateAsync(model, CurrentUserId, CanSeeAllData)) return NotFound();
         return RedirectToAction(nameof(Details), new { id = model.Id });
     }
 
@@ -164,7 +164,7 @@ public class TasksController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        await _tasks.DeleteAsync(id, CurrentUserId, IsAdmin);
+        await _tasks.DeleteAsync(id, CurrentUserId, CanSeeAllData);
         return RedirectToAction(nameof(Index));
     }
 
@@ -173,7 +173,7 @@ public class TasksController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangeStatus(int id, TaskStatus status, string? returnUrl)
     {
-        await _tasks.ChangeStatusAsync(id, status, CurrentUserId, IsAdmin);
+        await _tasks.ChangeStatusAsync(id, status, CurrentUserId, CanSeeAllData);
 
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
@@ -185,14 +185,14 @@ public class TasksController : BaseController
     public async Task<IActionResult> AddComment(int id, string newComment)
     {
         if (!string.IsNullOrWhiteSpace(newComment))
-            await _tasks.AddCommentAsync(id, CurrentUserId, IsAdmin, newComment);
+            await _tasks.AddCommentAsync(id, CurrentUserId, CanSeeAllData, newComment);
 
         return RedirectToAction(nameof(Details), new { id });
     }
 
     private async Task<List<SelectListItem>> ProjectOptionsAsync(int? selected)
     {
-        var projects = await _tasks.GetAccessibleProjectsAsync(CurrentUserId, IsAdmin);
+        var projects = await _tasks.GetAccessibleProjectsAsync(CurrentUserId, CanSeeAllData);
         return projects
             .Select(p => new SelectListItem(p.Name, p.Id.ToString(), p.Id == selected))
             .ToList();

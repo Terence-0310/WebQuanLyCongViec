@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Cetee.Models;
 using Cetee.Services;
 
 namespace Cetee.Controllers;
 
-[Authorize]
+/// <summary>Trang tổng quan — chỉ SuperAdmin và Admin được xem.</summary>
+[Authorize(Roles = $"{Roles.SuperAdmin},{Roles.Admin}")]
 public class DashboardController : BaseController
 {
     private readonly IDashboardService _dashboard;
@@ -19,8 +21,20 @@ public class DashboardController : BaseController
     public async Task<IActionResult> Index(int? employeeId)
     {
         var scope = await _users.ResolveScopeAsync(CurrentUserId, CurrentRole, employeeId);
-        int? targetEmployee = scope.SelectedId == 0 ? null : scope.SelectedId;
-        var model = await _dashboard.GetForUserAsync(CurrentUserId, IsAdmin, targetEmployee);
+
+        // Xác định tập người dùng để tổng hợp số liệu:
+        //  - Đã chọn một người cụ thể -> chỉ người đó.
+        //  - "Tất cả" + SuperAdmin    -> toàn hệ thống (null = không lọc).
+        //  - "Tất cả" + Admin         -> cả đội của mình.
+        List<int>? scopeUserIds;
+        if (scope.SelectedId != 0)
+            scopeUserIds = new List<int> { scope.SelectedId };
+        else if (CanSeeAllData)
+            scopeUserIds = null;
+        else
+            scopeUserIds = scope.Visible.Select(u => u.Id).ToList();
+
+        var model = await _dashboard.GetForScopeAsync(scopeUserIds);
         model.Scope = scope;
         return View(model);
     }

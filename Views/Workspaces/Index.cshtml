@@ -22,11 +22,11 @@ else
         {
             <div class="card">
                 <div class="card-body">
-                    <div class="card-title">@ws.Name</div>
+                    <div class="card-title"><a asp-action="Details" asp-route-id="@ws.Id">@ws.Name</a></div>
                     <p class="muted text-sm">@(string.IsNullOrEmpty(ws.Description) ? "Không có mô tả" : ws.Description)</p>
-                    <p class="text-sm muted">@ws.Projects.Count project • Chủ sở hữu: @ws.Owner.FullName</p>
+                    <p class="text-sm muted">@ws.Projects.Count project • @ws.Members.Count thành viên • Chủ sở hữu: @ws.Owner.FullName</p>
                     <div class="form-actions">
-                        <a class="btn btn-secondary btn-sm" asp-controller="Projects" asp-action="Index">Xem project</a>
+                        <a class="btn btn-secondary btn-sm" asp-action="Details" asp-route-id="@ws.Id">Chi tiết</a>
                         <a class="btn btn-secondary btn-sm" asp-action="Edit" asp-route-id="@ws.Id">Sửa</a>
                         <form class="inline-form" asp-action="Delete" asp-route-id="@ws.Id" method="post"
                               onsubmit="return confirm('Xóa workspace này và toàn bộ project bên trong?');">

@@ -1,0 +1,48 @@
+@model VerifyOtpViewModel
+@{
+    ViewData["Title"] = "Xác minh OTP";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Xác minh OTP - Cetee</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div class="auth-wrap">
+    <div class="auth-card">
+        <div class="auth-brand"><span class="brand-logo">C</span> Cetee</div>
+        <div class="auth-sub">Nhập mã xác nhận</div>
+
+        @if (TempData["Info"] is string info)
+        {
+            <div class="flash flash-info">@info</div>
+        }
+
+        <form asp-action="VerifyOtp" method="post">
+            <input type="hidden" asp-for="Email" />
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+            <p class="muted text-sm">Mã OTP đã gửi tới <b>@Model.Email</b>. Mã có hiệu lực trong 10 phút.</p>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="Code"></label>
+                <input class="form-control" asp-for="Code" autofocus inputmode="numeric" maxlength="6"
+                       autocomplete="one-time-code" placeholder="------"
+                       style="letter-spacing:10px;text-align:center;font-size:22px;font-weight:600" />
+                <span class="field-error" asp-validation-for="Code"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Xác nhận</button>
+        </form>
+
+        <div class="auth-alt">
+            Không nhận được mã?
+            <a asp-action="ForgotPassword" asp-route-email="@Model.Email">Gửi lại</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

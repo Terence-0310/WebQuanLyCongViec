@@ -22,6 +22,32 @@ public static class DisplayHelpers
         _ => "tag-todo"
     };
 
+    public static string Label(this AccountType type) => type switch
+    {
+        AccountType.Company => "Nhân viên công ty",
+        _ => "Cá nhân"
+    };
+
+    public static string CssClass(this AccountType type) => type switch
+    {
+        AccountType.Company => "tag-doing",
+        _ => "tag-todo"
+    };
+
+    public static string Label(this MemberRole role) => role switch
+    {
+        MemberRole.Owner => "Chủ sở hữu",
+        MemberRole.Manager => "Quản lý",
+        _ => "Thành viên"
+    };
+
+    public static string CssClass(this MemberRole role) => role switch
+    {
+        MemberRole.Owner => "tag-high",
+        MemberRole.Manager => "tag-doing",
+        _ => "tag-todo"
+    };
+
     public static string Label(this TaskPriority priority) => priority switch
     {
         TaskPriority.Low => "Thấp",

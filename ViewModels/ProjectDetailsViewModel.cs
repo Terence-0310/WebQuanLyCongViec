@@ -10,6 +10,12 @@ public class ProjectDetailsViewModel
     public IEnumerable<ProjectMember> Members { get; set; } = new List<ProjectMember>();
     public IEnumerable<ActivityLog> RecentActivities { get; set; } = new List<ActivityLog>();
 
+    /// <summary>Thành viên workspace chưa có trong project (ứng viên để thêm). Rỗng nếu không có quyền.</summary>
+    public List<User> AddableUsers { get; set; } = new();
+
+    /// <summary>Người xem có quyền thêm/bớt thành viên project.</summary>
+    public bool CanManageMembers { get; set; }
+
     public int TotalTasks { get; set; }
     public int CompletedTasks { get; set; }
 

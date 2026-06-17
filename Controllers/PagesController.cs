@@ -15,7 +15,7 @@ public class PagesController : BaseController
     // GET /Pages/Details/{id}
     public async Task<IActionResult> Details(int id)
     {
-        var page = await _pages.GetByIdForUserAsync(id, CurrentUserId, IsAdmin);
+        var page = await _pages.GetByIdForUserAsync(id, CurrentUserId, CanSeeAllData);
         if (page is null) return NotFound();
         return View(page);
     }
@@ -30,7 +30,7 @@ public class PagesController : BaseController
     {
         if (!ModelState.IsValid) return View(model);
 
-        var page = await _pages.CreateAsync(model, CurrentUserId, IsAdmin);
+        var page = await _pages.CreateAsync(model, CurrentUserId, CanSeeAllData);
         if (page is null) return NotFound();
 
         return RedirectToAction(nameof(Details), new { id = page.Id });
@@ -39,7 +39,7 @@ public class PagesController : BaseController
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var page = await _pages.GetByIdForUserAsync(id, CurrentUserId, IsAdmin);
+        var page = await _pages.GetByIdForUserAsync(id, CurrentUserId, CanSeeAllData);
         if (page is null) return NotFound();
 
         return View(new PageFormViewModel
@@ -57,7 +57,7 @@ public class PagesController : BaseController
     {
         if (!ModelState.IsValid) return View(model);
 
-        if (!await _pages.UpdateAsync(model, CurrentUserId, IsAdmin)) return NotFound();
+        if (!await _pages.UpdateAsync(model, CurrentUserId, CanSeeAllData)) return NotFound();
         return RedirectToAction(nameof(Details), new { id = model.Id });
     }
 
@@ -65,7 +65,7 @@ public class PagesController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        var projectId = await _pages.DeleteAsync(id, CurrentUserId, IsAdmin);
+        var projectId = await _pages.DeleteAsync(id, CurrentUserId, CanSeeAllData);
         if (projectId is null) return NotFound();
         return RedirectToAction("Details", "Projects", new { id = projectId.Value });
     }
