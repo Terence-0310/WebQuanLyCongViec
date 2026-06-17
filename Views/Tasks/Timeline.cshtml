@@ -133,9 +133,11 @@
                              title="@t.Title — bấm để chỉnh giờ">
                             <div class="cal-event-time">@t.ScheduledStart.Value.ToString("HH:mm")–@endTime.ToString("HH:mm")</div>
                             <div class="cal-event-title">@t.Title</div>
-                            @if (height >= 50)
+                            @if (height >= 38)
                             {
-                                <div class="cal-event-sub">@t.Project?.Name</div>
+                                <div class="cal-event-sub">
+                                    <span class="cal-event-who">@(t.Assignee?.FullName ?? "Chưa giao")</span>@(height >= 58 && t.Project != null ? " · " + t.Project.Name : "")
+                                </div>
                             }
                             <div class="cal-resize" title="Kéo để đổi thời lượng"></div>
                         </div>
@@ -162,6 +164,10 @@
                         <div class="tl-chip-meta">
                             <span class="tag @t.Priority.CssClass()">@t.Priority.Label()</span>
                             <span>@t.Project?.Name</span>
+                        </div>
+                        <div class="tl-chip-who">
+                            <partial name="_Avatar" model="@(t.Assignee?.FullName ?? "?")" />
+                            <span class="text-sm muted">@(t.Assignee?.FullName ?? "Chưa giao")</span>
                         </div>
                     </div>
                 }

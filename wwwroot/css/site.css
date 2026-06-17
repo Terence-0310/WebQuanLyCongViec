@@ -455,3 +455,8 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 .employee-picker { display: inline-flex; align-items: center; gap: 6px; }
 .employee-picker-label { font-size: 12.5px; color: var(--muted); font-weight: 600; white-space: nowrap; }
 .employee-picker select { min-width: 160px; }
+
+/* Tên người được giao trên Lịch ngày */
+.cal-event-who { font-weight: 600; color: #2a3340; }
+.tl-chip-who { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.tl-chip-who .avatar { width: 20px; height: 20px; font-size: 10px; }
