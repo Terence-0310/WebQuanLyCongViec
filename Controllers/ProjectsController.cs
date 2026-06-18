@@ -124,7 +124,7 @@ public class ProjectsController : BaseController
     // Đổ danh sách workspace vào dropdown của form project.
     private async Task PopulateWorkspaces()
     {
-        var workspaces = await _workspaces.GetForUserAsync(CurrentUserId, CanSeeAllData);
+        var workspaces = await _workspaces.GetSelectableAsync(CurrentUserId, CanSeeAllData);
         ViewBag.Workspaces = workspaces
             .Select(w => new SelectListItem(w.Name, w.Id.ToString()))
             .ToList();

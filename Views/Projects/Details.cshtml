@@ -73,13 +73,7 @@
                         {
                             <tr>
                                 <td><a asp-controller="Tasks" asp-action="Details" asp-route-id="@t.Id">@t.Title</a></td>
-                                <td>
-                                    @if (t.Assignee != null)
-                                    {
-                                        <div class="cell-user"><partial name="_Avatar" model="@t.Assignee.FullName" /><span class="text-sm">@t.Assignee.FullName</span></div>
-                                    }
-                                    else { <span class="muted text-sm">—</span> }
-                                </td>
+                                <td><partial name="_Assignees" model="t.AssignedUsers" /></td>
                                 <td><span class="tag @t.Status.CssClass()">@t.Status.Label()</span></td>
                                 <td class="muted text-sm">@(t.DueDate?.ToString("dd/MM") ?? "—")</td>
                             </tr>

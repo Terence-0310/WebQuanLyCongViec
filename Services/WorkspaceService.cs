@@ -7,7 +7,9 @@ namespace Cetee.Services;
 
 public interface IWorkspaceService
 {
-    Task<List<Workspace>> GetForUserAsync(int userId, bool seeAll);
+    Task<WorkspaceIndexViewModel> GetIndexAsync(int userId, bool seeAll);
+    /// <summary>Danh sách workspace người dùng truy cập được (dùng cho dropdown chọn workspace).</summary>
+    Task<List<Workspace>> GetSelectableAsync(int userId, bool seeAll);
     Task<Workspace?> GetByIdForUserAsync(int id, int userId, bool seeAll);
     Task<WorkspaceDetailsViewModel?> GetDetailsAsync(int id, int userId, string role);
     Task<Workspace> CreateAsync(WorkspaceFormViewModel model, int ownerId, string ownerRole);
@@ -16,6 +18,7 @@ public interface IWorkspaceService
 
     Task<bool> AddMemberAsync(int workspaceId, int targetUserId, int actingUserId, string actingRole);
     Task<bool> RemoveMemberAsync(int workspaceId, int targetUserId, int actingUserId, string actingRole);
+    Task<bool> SetMemberRoleAsync(int workspaceId, int targetUserId, MemberRole role, int actingUserId, string actingRole);
 }
 
 /// <summary>Nghiệp vụ quản lý workspace. User chỉ thấy workspace mình là thành viên; SuperAdmin thấy tất cả.</summary>
@@ -37,12 +40,40 @@ public class WorkspaceService : IWorkspaceService
         return seeAll ? query : query.Where(w => w.Members.Any(m => m.UserId == userId));
     }
 
-    public Task<List<Workspace>> GetForUserAsync(int userId, bool seeAll) =>
-        Accessible(userId, seeAll)
+    public async Task<WorkspaceIndexViewModel> GetIndexAsync(int userId, bool seeAll)
+    {
+        var list = await Accessible(userId, seeAll)
             .Include(w => w.Owner)
-            .Include(w => w.Projects)
-            .Include(w => w.Members)
+            .Include(w => w.Members).ThenInclude(m => m.User)
+            .Include(w => w.Projects).ThenInclude(p => p.Tasks)
             .OrderByDescending(w => w.CreatedAt)
+            .ToListAsync();
+
+        var cards = list.Select(w =>
+        {
+            var mine = w.Members.FirstOrDefault(m => m.UserId == userId);
+            return new WorkspaceCardViewModel
+            {
+                Workspace = w,
+                MyRole = mine?.Role ?? MemberRole.Member,
+                IsOwner = w.OwnerId == userId,
+                TaskCount = w.Projects.Sum(p => p.Tasks.Count),
+                IsPersonal = w.Members.Count <= 1
+            };
+        }).ToList();
+
+        var viewer = await _db.Users.FindAsync(userId);
+        return new WorkspaceIndexViewModel
+        {
+            Owned = cards.Where(c => c.IsOwner).ToList(),
+            Joined = cards.Where(c => !c.IsOwner).ToList(),
+            ViewerIsPersonal = viewer?.AccountType == AccountType.Personal
+        };
+    }
+
+    public Task<List<Workspace>> GetSelectableAsync(int userId, bool seeAll) =>
+        Accessible(userId, seeAll)
+            .OrderBy(w => w.Name)
             .ToListAsync();
 
     public Task<Workspace?> GetByIdForUserAsync(int id, int userId, bool seeAll) =>
@@ -71,13 +102,16 @@ public class WorkspaceService : IWorkspaceService
                 .ToList();
         }
 
+        var mine = ws.Members.FirstOrDefault(m => m.UserId == userId);
         return new WorkspaceDetailsViewModel
         {
             Workspace = ws,
             Members = ws.Members.OrderByDescending(m => m.Role).ThenBy(m => m.User.FullName).ToList(),
             Projects = ws.Projects.OrderByDescending(p => p.CreatedAt).ToList(),
             AddableUsers = addable,
-            CanManageMembers = canManage
+            CanManageMembers = canManage,
+            IsPersonal = ws.Members.Count <= 1,
+            MyRole = mine?.Role ?? MemberRole.Member
         };
     }
 
@@ -175,6 +209,28 @@ public class WorkspaceService : IWorkspaceService
         await _db.WorkspaceMembers
             .Where(m => m.WorkspaceId == workspaceId && m.UserId == targetUserId)
             .ExecuteDeleteAsync();
+        return true;
+    }
+
+    /// <summary>Đổi vai trò của một thành viên (Thành viên ↔ Quản lý). Không áp dụng cho chủ sở hữu.</summary>
+    public async Task<bool> SetMemberRoleAsync(int workspaceId, int targetUserId, MemberRole role, int actingUserId, string actingRole)
+    {
+        // Chỉ cho phép gán giữa Member và Manager; Owner là cố định, không gán qua đây.
+        if (role != MemberRole.Member && role != MemberRole.Manager) return false;
+
+        bool seeAll = Roles.CanSeeAllData(actingRole);
+        var ws = await Accessible(actingUserId, seeAll)
+            .Include(w => w.Members)
+            .FirstOrDefaultAsync(w => w.Id == workspaceId);
+        if (ws is null || !(seeAll || ws.OwnerId == actingUserId)) return false;
+
+        if (targetUserId == ws.OwnerId) return false; // Không đổi vai trò chủ sở hữu.
+
+        var member = ws.Members.FirstOrDefault(m => m.UserId == targetUserId);
+        if (member is null) return false;
+
+        member.Role = role;
+        await _db.SaveChangesAsync();
         return true;
     }
 }

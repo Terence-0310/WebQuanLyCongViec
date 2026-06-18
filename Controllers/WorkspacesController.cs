@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Cetee.Models;
 using Cetee.Services;
 using Cetee.ViewModels;
 
@@ -20,8 +21,8 @@ public class WorkspacesController : BaseController
     // GET /Workspaces
     public async Task<IActionResult> Index()
     {
-        var list = await _workspaces.GetForUserAsync(CurrentUserId, CanSeeAllData);
-        return View(list);
+        var model = await _workspaces.GetIndexAsync(CurrentUserId, CanSeeAllData);
+        return View(model);
     }
 
     // GET /Workspaces/Details/{id}
@@ -35,7 +36,11 @@ public class WorkspacesController : BaseController
     [HttpGet]
     public async Task<IActionResult> Create()
     {
-        var model = new WorkspaceFormViewModel { CandidateUsers = await CandidatesAsync() };
+        var model = new WorkspaceFormViewModel
+        {
+            CandidateUsers = await CandidatesAsync(),
+            IsPersonalCreator = IsPersonalAccount
+        };
         return View(model);
     }
 
@@ -46,6 +51,7 @@ public class WorkspacesController : BaseController
         if (!ModelState.IsValid)
         {
             model.CandidateUsers = await CandidatesAsync();
+            model.IsPersonalCreator = IsPersonalAccount;
             return View(model);
         }
 
@@ -99,6 +105,17 @@ public class WorkspacesController : BaseController
             TempData["Error"] = "Không thể gỡ thành viên này.";
         else
             TempData["Success"] = "Đã gỡ thành viên khỏi workspace.";
+        return RedirectToAction(nameof(Details), new { id = workspaceId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetMemberRole(int workspaceId, int userId, MemberRole role)
+    {
+        if (!await _workspaces.SetMemberRoleAsync(workspaceId, userId, role, CurrentUserId, CurrentRole))
+            TempData["Error"] = "Không thể đổi vai trò thành viên này.";
+        else
+            TempData["Success"] = "Đã cập nhật vai trò thành viên.";
         return RedirectToAction(nameof(Details), new { id = workspaceId });
     }
 

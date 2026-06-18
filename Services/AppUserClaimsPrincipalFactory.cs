@@ -8,7 +8,8 @@ namespace Cetee.Services;
 /// <summary>
 /// Sinh claim cho cookie đăng nhập của Identity theo quy ước của ứng dụng:
 /// Name = họ tên đầy đủ, Role = tên vai trò lấy từ FK trực tiếp <see cref="User.RoleId"/>
-/// (hệ thống dùng 1 vai trò/người qua FK, không qua bảng AspNetUserRoles).
+/// (hệ thống dùng 1 vai trò/người qua FK, không qua bảng AspNetUserRoles),
+/// và một claim "account_type" để phân biệt nhanh tài khoản cá nhân / công ty.
 /// NameIdentifier (= User.Id) do Identity tự thêm.
 /// </summary>
 public class AppUserClaimsPrincipalFactory : UserClaimsPrincipalFactory<User, Role>
@@ -38,6 +39,9 @@ public class AppUserClaimsPrincipalFactory : UserClaimsPrincipalFactory<User, Ro
         var role = await _roleManager.FindByIdAsync(user.RoleId.ToString());
         if (role?.Name is { } roleName)
             identity.AddClaim(new Claim(ClaimTypes.Role, roleName));
+
+        // Loại tài khoản (Personal/Company) để giao diện điều chỉnh mà không cần truy vấn lại DB.
+        identity.AddClaim(new Claim(AppClaims.AccountType, user.AccountType.ToString()));
 
         return principal;
     }

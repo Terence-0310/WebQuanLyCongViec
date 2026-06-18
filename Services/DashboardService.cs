@@ -43,7 +43,7 @@ public class DashboardService : IDashboardService
             // Một đội hoặc một cá nhân: workspace/project nhóm tham gia, task giao cho nhóm.
             workspaces = _db.Workspaces.Where(w => w.Members.Any(m => scopeUserIds.Contains(m.UserId)));
             projects = _db.Projects.Where(p => p.Workspace.Members.Any(m => scopeUserIds.Contains(m.UserId)));
-            tasks = _db.Tasks.Where(t => t.AssigneeId != null && scopeUserIds.Contains(t.AssigneeId.Value));
+            tasks = _db.Tasks.Where(t => t.Assignees.Any(a => scopeUserIds.Contains(a.UserId)));
         }
 
         var today = DateTime.UtcNow.Date;
@@ -77,7 +77,7 @@ public class DashboardService : IDashboardService
 
             RecentTasks = await tasks
                 .Include(t => t.Project)
-                .Include(t => t.Assignee)
+                .Include(t => t.Assignees).ThenInclude(a => a.User)
                 .OrderByDescending(t => t.CreatedAt)
                 .Take(6)
                 .ToListAsync(),

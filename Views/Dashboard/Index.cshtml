@@ -174,15 +174,7 @@
                         <tr>
                             <td><a asp-controller="Tasks" asp-action="Details" asp-route-id="@t.Id">@t.Title</a></td>
                             <td class="muted">@t.Project?.Name</td>
-                            <td>
-                                <div class="cell-user">
-                                    @if (t.Assignee != null)
-                                    {
-                                        <partial name="_Avatar" model="@t.Assignee.FullName" />
-                                    }
-                                    else { <span class="muted text-sm">—</span> }
-                                </div>
-                            </td>
+                            <td><partial name="_Assignees" model="t.AssignedUsers" /></td>
                             <td class="text-sm">
                                 @if (t.DueDate.HasValue)
                                 {

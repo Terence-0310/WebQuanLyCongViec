@@ -138,7 +138,7 @@ public class UserService : IUserService
                 ManagerName = u.Manager?.FullName,
                 CreatedAt = u.CreatedAt,
                 OwnedWorkspaceCount = _db.Workspaces.Count(w => w.OwnerId == u.Id),
-                AssignedTaskCount = _db.Tasks.Count(t => t.AssigneeId == u.Id),
+                AssignedTaskCount = _db.TaskAssignees.Count(a => a.UserId == u.Id),
                 IsSelf = u.Id == viewerId,
                 CanEdit = CanManage(viewerId, viewerRole, u) || u.Id == viewerId,
                 CanDelete = CanManage(viewerId, viewerRole, u),
@@ -299,14 +299,15 @@ public class UserService : IUserService
             return (false, "Bạn không có quyền xóa người dùng này.");
 
         // Gỡ các ràng buộc khóa ngoại kiểu Restrict trước khi xóa user.
-        // (Task được giao -> tự SET NULL; Notification/ActivityLog -> tự CASCADE ở DB.)
+        // (Notification/ActivityLog -> tự CASCADE ở DB.)
         await using var tx = await _db.Database.BeginTransactionAsync();
 
         // Gỡ liên kết nhân viên trực thuộc (nếu user này là cấp trên của người khác).
         await _db.Users.Where(u => u.ManagerId == targetUserId)
             .ExecuteUpdateAsync(s => s.SetProperty(u => u.ManagerId, (int?)null));
 
-        // Bình luận và tư cách thành viên của user.
+        // Phân công task, bình luận và tư cách thành viên của user.
+        await _db.TaskAssignees.Where(a => a.UserId == targetUserId).ExecuteDeleteAsync();
         await _db.TaskComments.Where(c => c.UserId == targetUserId).ExecuteDeleteAsync();
         await _db.ProjectMembers.Where(m => m.UserId == targetUserId).ExecuteDeleteAsync();
         await _db.WorkspaceMembers.Where(m => m.UserId == targetUserId).ExecuteDeleteAsync();

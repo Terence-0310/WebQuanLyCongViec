@@ -17,4 +17,8 @@ public abstract class BaseController : Controller
     /// <summary>Chỉ SuperAdmin được phép xem/thao tác toàn bộ dữ liệu hệ thống.
     /// Các vai trò khác bị giới hạn theo quyền thành viên và phạm vi quản lý của mình.</summary>
     protected bool CanSeeAllData => Roles.CanSeeAllData(CurrentRole);
+
+    /// <summary>Tài khoản đang đăng nhập là loại cá nhân (không thuộc cơ cấu công ty).</summary>
+    protected bool IsPersonalAccount =>
+        User.FindFirstValue(AppClaims.AccountType) == AccountType.Personal.ToString();
 }

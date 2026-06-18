@@ -15,21 +15,33 @@
     <span class="field-error" asp-validation-for="Description"></span>
 </div>
 
-<div class="form-row">
-    <div class="form-group">
-        <label class="form-label" asp-for="ProjectId"></label>
-        <select class="form-control" asp-for="ProjectId" asp-items="Model.ProjectOptions">
-            <option value="">-- Chọn project --</option>
-        </select>
-        <span class="field-error" asp-validation-for="ProjectId"></span>
-    </div>
-    <div class="form-group">
-        <label class="form-label" asp-for="AssigneeId"></label>
-        <select class="form-control" asp-for="AssigneeId" asp-items="Model.AssigneeOptions">
-            <option value="">-- Chưa giao --</option>
-        </select>
-        <span class="field-error" asp-validation-for="AssigneeId"></span>
-    </div>
+<div class="form-group">
+    <label class="form-label" asp-for="ProjectId"></label>
+    <select class="form-control" asp-for="ProjectId" asp-items="Model.ProjectOptions">
+        <option value="">-- Chọn project --</option>
+    </select>
+    <span class="field-error" asp-validation-for="ProjectId"></span>
+</div>
+
+<div class="form-group">
+    <label class="form-label">Người thực hiện <span class="muted text-sm">(chọn nhiều người nếu cùng làm)</span></label>
+    @if (Model.AssigneeOptions.Any())
+    {
+        <div class="check-list">
+            @foreach (var o in Model.AssigneeOptions)
+            {
+                <label class="check-item">
+                    <input type="checkbox" name="AssigneeIds" value="@o.Value" @(o.Selected ? "checked" : "") />
+                    <partial name="_Avatar" model="@o.Text" />
+                    <span>@o.Text</span>
+                </label>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="muted text-sm">Chọn project rồi lưu để hiện danh sách thành viên có thể giao việc.</p>
+    }
 </div>
 
 <div class="form-row">

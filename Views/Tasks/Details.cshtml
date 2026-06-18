@@ -28,7 +28,7 @@
             <table class="table" style="border:none;">
                 <tbody>
                     <tr><th>Project</th><td><a asp-controller="Projects" asp-action="Details" asp-route-id="@t.ProjectId">@t.Project?.Name</a></td></tr>
-                    <tr><th>Người thực hiện</th><td>@(t.Assignee?.FullName ?? "Chưa giao")</td></tr>
+                    <tr><th>Người thực hiện</th><td><partial name="_Assignees" model="t.AssignedUsers" /></td></tr>
                     <tr><th>Hạn chót</th><td>@(t.DueDate?.ToString("dd/MM/yyyy") ?? "—")</td></tr>
                     <tr><th>Tạo lúc</th><td>@t.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td></tr>
                 </tbody>

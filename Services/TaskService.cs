@@ -45,25 +45,26 @@ public class TaskService : ITaskService
         // Người dùng thấy task: trong workspace mình tham gia, HOẶC được giao cho mình,
         // HOẶC được giao cho người trong đội mình (cấp dưới trực tiếp hoặc qua một cấp
         // trung gian — Manager thấy việc của User, Admin thấy việc của Manager lẫn User).
+        // Với đa phụ trách: chỉ cần MỘT người phụ trách thỏa điều kiện là task hiển thị.
         return query.Where(t =>
             t.Project.Workspace.Members.Any(m => m.UserId == userId)
-            || t.AssigneeId == userId
-            || (t.Assignee != null && (
-                    t.Assignee.ManagerId == userId
-                    || (t.Assignee.Manager != null && t.Assignee.Manager.ManagerId == userId))));
+            || t.Assignees.Any(a =>
+                    a.UserId == userId
+                    || a.User.ManagerId == userId
+                    || (a.User.Manager != null && a.User.Manager.ManagerId == userId)));
     }
 
     public async Task<List<TaskItem>> GetForUserAsync(int userId, bool seeAll, int? projectId, TaskStatus? status, string? search = null, IReadOnlyList<int>? assigneeFilter = null)
     {
         var query = Accessible(userId, seeAll)
             .Include(t => t.Project)
-            .Include(t => t.Assignee)
+            .Include(t => t.Assignees).ThenInclude(a => a.User)
             .AsQueryable();
 
         if (projectId.HasValue) query = query.Where(t => t.ProjectId == projectId.Value);
         if (status.HasValue) query = query.Where(t => t.Status == status.Value);
         if (assigneeFilter != null)
-            query = query.Where(t => t.AssigneeId != null && assigneeFilter.Contains(t.AssigneeId.Value));
+            query = query.Where(t => t.Assignees.Any(a => assigneeFilter.Contains(a.UserId)));
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
@@ -79,7 +80,7 @@ public class TaskService : ITaskService
     public Task<TaskItem?> GetByIdForUserAsync(int id, int userId, bool seeAll) =>
         Accessible(userId, seeAll)
             .Include(t => t.Project)
-            .Include(t => t.Assignee)
+            .Include(t => t.Assignees).ThenInclude(a => a.User)
             .Include(t => t.Comments).ThenInclude(c => c.User)
             .FirstOrDefaultAsync(t => t.Id == id);
 
@@ -106,52 +107,76 @@ public class TaskService : ITaskService
             : await _db.Projects.AnyAsync(p => p.Id == model.ProjectId && p.Workspace.Members.Any(m => m.UserId == userId));
         if (!hasAccess) return null;
 
+        // Chỉ chấp nhận người thực hiện là thành viên của project (đa phụ trách).
+        var assigneeIds = await ValidAssigneesAsync(model.ProjectId, model.AssigneeIds);
+
         var task = new TaskItem
         {
             Title = model.Title.Trim(),
             Description = model.Description?.Trim(),
             ProjectId = model.ProjectId,
-            AssigneeId = model.AssigneeId,
             Priority = model.Priority,
             Status = model.Status,
             DueDate = model.DueDate,
-            DurationMinutes = model.DurationMinutes
+            DurationMinutes = model.DurationMinutes,
+            Assignees = assigneeIds.Select(uid => new TaskAssignee { UserId = uid }).ToList()
         };
         _db.Tasks.Add(task);
         await _db.SaveChangesAsync();
 
         await _activity.LogAsync(userId, "Created", "Task", task.Id, $"Tạo task \"{task.Title}\"");
 
-        // Tạo thông báo nếu task được giao cho ai đó.
-        if (task.AssigneeId.HasValue)
-            await _notifications.CreateAsync(task.AssigneeId.Value, $"Bạn được giao task: {task.Title}", task.Id);
+        // Thông báo cho từng người được giao.
+        foreach (var uid in assigneeIds)
+            await _notifications.CreateAsync(uid, $"Bạn được giao task: {task.Title}", task.Id);
 
         return task;
     }
 
     public async Task<bool> UpdateAsync(TaskFormViewModel model, int userId, bool seeAll)
     {
-        var task = await Accessible(userId, seeAll).FirstOrDefaultAsync(t => t.Id == model.Id);
+        var task = await Accessible(userId, seeAll)
+            .Include(t => t.Assignees)
+            .FirstOrDefaultAsync(t => t.Id == model.Id);
         if (task is null) return false;
 
-        int? previousAssignee = task.AssigneeId;
+        var previousAssignees = task.Assignees.Select(a => a.UserId).ToHashSet();
+        var newAssignees = await ValidAssigneesAsync(task.ProjectId, model.AssigneeIds);
 
         task.Title = model.Title.Trim();
         task.Description = model.Description?.Trim();
-        task.AssigneeId = model.AssigneeId;
         task.Priority = model.Priority;
         task.Status = model.Status;
         task.DueDate = model.DueDate;
         task.DurationMinutes = model.DurationMinutes;
+
+        // Đồng bộ danh sách phụ trách: gỡ người bị bỏ, thêm người mới.
+        task.Assignees.Clear();
+        foreach (var uid in newAssignees)
+            task.Assignees.Add(new TaskAssignee { TaskItemId = task.Id, UserId = uid });
+
         await _db.SaveChangesAsync();
 
         await _activity.LogAsync(userId, "Updated", "Task", task.Id, $"Cập nhật task \"{task.Title}\"");
 
-        // Nếu đổi người thực hiện sang người mới thì thông báo.
-        if (task.AssigneeId.HasValue && task.AssigneeId != previousAssignee)
-            await _notifications.CreateAsync(task.AssigneeId.Value, $"Bạn được giao task: {task.Title}", task.Id);
+        // Thông báo cho người MỚI được giao (không lặp lại với người đã có).
+        foreach (var uid in newAssignees.Where(id => !previousAssignees.Contains(id)))
+            await _notifications.CreateAsync(uid, $"Bạn được giao task: {task.Title}", task.Id);
 
         return true;
+    }
+
+    /// <summary>Lọc danh sách người được giao về những người thực sự là thành viên project (loại trùng).</summary>
+    private async Task<List<int>> ValidAssigneesAsync(int projectId, IEnumerable<int>? requested)
+    {
+        if (requested is null) return new List<int>();
+        var wanted = requested.Distinct().ToHashSet();
+        if (wanted.Count == 0) return new List<int>();
+
+        return await _db.ProjectMembers
+            .Where(m => m.ProjectId == projectId && wanted.Contains(m.UserId))
+            .Select(m => m.UserId)
+            .ToListAsync();
     }
 
     public async Task<int?> DeleteAsync(int id, int userId, bool seeAll)
@@ -218,12 +243,12 @@ public class TaskService : ITaskService
 
         var baseQuery = Accessible(userId, seeAll)
             .Include(t => t.Project)
-            .Include(t => t.Assignee)
+            .Include(t => t.Assignees).ThenInclude(a => a.User)
             .AsQueryable();
 
         // Lọc theo người được giao khi xem lịch của một nhân viên cụ thể.
         if (assigneeFilter != null)
-            baseQuery = baseQuery.Where(t => t.AssigneeId != null && assigneeFilter.Contains(t.AssigneeId.Value));
+            baseQuery = baseQuery.Where(t => t.Assignees.Any(a => assigneeFilter.Contains(a.UserId)));
 
         // Task đã xếp lịch trong ngày đang xem.
         var scheduled = await baseQuery

@@ -30,7 +30,7 @@ public class User : IdentityUser<int>
     // Navigation
     public ICollection<WorkspaceMember> WorkspaceMemberships { get; set; } = new List<WorkspaceMember>();
     public ICollection<ProjectMember> ProjectMemberships { get; set; } = new List<ProjectMember>();
-    public ICollection<TaskItem> AssignedTasks { get; set; } = new List<TaskItem>();
+    public ICollection<TaskAssignee> TaskAssignments { get; set; } = new List<TaskAssignee>();
     public ICollection<TaskComment> Comments { get; set; } = new List<TaskComment>();
     public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }

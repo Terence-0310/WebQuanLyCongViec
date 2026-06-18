@@ -53,18 +53,28 @@ trông như sản phẩm thực tế.
 - **Xem theo người (employee scope):** trên Dashboard / List / Kanban / Timeline,
   vai trò quản lý (Manager trở lên) có **bộ chọn người** để lọc dữ liệu theo từng
   thành viên hoặc xem "Tất cả" trong phạm vi (đội) được phép.
-- **Workspace:** tạo / sửa / xóa / danh sách + **trang chi tiết** với quản lý thành
-  viên (thêm/gỡ người trong phạm vi quản lý; hiển thị chức vụ công ty + vai trò
-  trong workspace + chủ sở hữu). Khi tạo workspace có sẵn danh sách chọn thành viên.
+- **Workspace:** tạo / sửa / xóa + **danh sách** tách *"của tôi"* (sở hữu) và
+  *"tôi tham gia"*, mỗi thẻ có nhãn loại (**Cá nhân / Nhóm**), vai trò của bạn,
+  số project/task và xếp chồng avatar thành viên. **Trang chi tiết** quản lý thành
+  viên đầy đủ: thêm/gỡ người trong phạm vi quản lý, **đổi vai trò** (Thành viên ↔
+  Quản lý), hiển thị chức vụ công ty + vai trò trong workspace + chủ sở hữu.
+  - *Tối ưu cho cá nhân:* tài khoản **Cá nhân** (và workspace chỉ một mình) thấy
+    giao diện "không gian cá nhân" gọn nhẹ — ẩn phần quản lý đội ngũ, đổi nhãn nút
+    thành "Tạo không gian". Loại tài khoản được đưa vào cookie qua claim
+    `account_type` (xem `AppClaims`) để giao diện không cần truy vấn lại DB.
 - **Project:** CRUD + thanh tiến độ theo % task hoàn thành + **quản lý thành viên**
   (bố trí người từ thành viên workspace vào project; gỡ khỏi project). Gỡ khỏi
   workspace tự gỡ khỏi các project bên trong.
 - **Page ghi chú:** CRUD, nội dung dạng văn bản đơn giản.
-- **Task:** CRUD, giao việc, deadline, priority (Low/Medium/High), status
-  (Todo/Doing/Done); xem dạng **List**, **Kanban 3 cột** (đổi trạng thái bằng
-  dropdown ngay trên thẻ) và **Timeline** (lịch ngày: xếp / đổi / bỏ lịch và chỉnh
-  thời lượng task bằng AJAX qua `ScheduledStart` + `DurationMinutes`); nhãn
-  **Overdue** cho task quá hạn.
+- **Task:** CRUD, deadline, priority (Low/Medium/High), status (Todo/Doing/Done);
+  xem dạng **List**, **Kanban 3 cột** (đổi trạng thái bằng dropdown ngay trên thẻ)
+  và **Timeline** (lịch ngày: xếp / đổi / bỏ lịch và chỉnh thời lượng task bằng AJAX
+  qua `ScheduledStart` + `DurationMinutes`); nhãn **Overdue** cho task quá hạn.
+- **Giao việc đa phụ trách:** một task có thể giao cho **nhiều người cùng làm**
+  (quan hệ nhiều-nhiều `TaskAssignee`), giao cho ai cũng được thông báo. Vì Timeline
+  là **lịch riêng của từng người**, một task chung (1 khung giờ) hiển thị trên lịch
+  của *tất cả* người phụ trách — nhiều người làm cùng khung giờ là bình thường,
+  không bắt "mỗi người một giờ". Chỉ giao được cho thành viên của project.
 - **Comment:** bình luận trong task, hiển thị theo thời gian.
 - **Notification:** tự tạo khi user được giao task; đánh dấu đã đọc; badge số chưa đọc.
 - **Activity Log:** ghi nhật ký khi tạo project, tạo/sửa task, đổi trạng thái,
@@ -94,9 +104,10 @@ Cetee/
 ├── Models/                 # Entity (Code First)
 │   ├── User : IdentityUser<int> (+ FullName, RoleId, ManagerId tự tham chiếu, AccountType), Role : IdentityRole<int>, Workspace, WorkspaceMember
 │   ├── Project, ProjectMember, Page
-│   ├── TaskItem (+ ScheduledStart, DurationMinutes), TaskComment, Notification, ActivityLog
+│   ├── TaskItem (+ ScheduledStart, DurationMinutes), TaskAssignee (đa phụ trách n-n), TaskComment, Notification, ActivityLog
 │   ├── PasswordResetCode.cs     # Mã OTP đặt lại mật khẩu (băm, có hạn, giới hạn số lần)
 │   ├── Roles.cs                 # Hằng số vai trò + cấp bậc + quyền gán (Level/AssignableBy/Label)
+│   ├── AppClaims.cs             # Hằng số claim tùy biến (account_type: Personal/Company)
 │   ├── EmailSettings.cs, JwtSettings.cs # POCO cấu hình (bind từ appsettings)
 │   └── Enums.cs                 # TaskPriority, TaskStatus, MemberRole, AccountType
 ├── ViewModels/             # Model cho form/trang (chứa Data Annotations validate)
@@ -124,7 +135,7 @@ Cetee/
 │   ├── Users/ (Index, Create, Edit, _UserTable)
 │   ├── Workspaces/ (Index, Details, Create, Edit, _Form), Projects/ (… Details)
 │   └── Shared/ (_Layout, _Avatar, _EmployeePicker, Error, Components/)
-├── Migrations/             # InitialCreate, AddTaskScheduling, AddManagerHierarchy, AddPasswordReset, AddAccountType, AddIdentity
+├── Migrations/             # InitialCreate, AddTaskScheduling, AddManagerHierarchy, AddPasswordReset, AddAccountType, AddIdentity, AddTaskAssignees
 ├── seed-data.sql           # Script SSMS nạp dữ liệu mẫu công ty (tùy chọn)
 ├── wwwroot/css/site.css    # Toàn bộ CSS (navy + mint + xám, không rải rác)
 ├── appsettings.json        # Connection string + cấu hình Email/Jwt/Google (secret để ở appsettings.Development.json)
@@ -157,7 +168,8 @@ Request → Controller → Service → AppDbContext (EF Core) → SQL Server
 | **Project** | thuộc 1 Workspace; (1)—(n) Page, Task |
 | **ProjectMember** | nối User ↔ Project (n-n) + MemberRole |
 | **Page** | thuộc 1 Project (ghi chú) |
-| **TaskItem** | thuộc 1 Project; Assignee → User (nullable); có `ScheduledStart` + `DurationMinutes` cho Timeline |
+| **TaskItem** | thuộc 1 Project; có `ScheduledStart` + `DurationMinutes` cho Timeline |
+| **TaskAssignee** | nối Task ↔ User (n-n): đa phụ trách (nhiều người cùng 1 task) |
 | **TaskComment** | thuộc 1 Task + 1 User |
 | **Notification** | thuộc 1 User; có thể trỏ tới 1 Task |
 | **ActivityLog** | UserId, Action, EntityType, EntityId, Description, CreatedAt |
@@ -219,7 +231,8 @@ dotnet tool install --global dotnet-ef
 ```
 
 Tạo database từ các migration có sẵn (`InitialCreate`, `AddTaskScheduling`,
-`AddManagerHierarchy`, `AddPasswordReset`, `AddAccountType`, `AddIdentity`):
+`AddManagerHierarchy`, `AddPasswordReset`, `AddAccountType`, `AddIdentity`,
+`AddTaskAssignees`):
 ```bash
 dotnet ef database update
 ```
@@ -257,7 +270,10 @@ người dùng tạo qua giao diện (hoặc nạp bằng script bên dưới).
 
 Để có sẵn dữ liệu minh họa một **công ty đầy đủ 4 tầng**, mở **`seed-data.sql`**
 trong SSMS (trỏ tới `CeteeDb`) và Execute. Script chỉ chèn khi DB chưa có Workspace
-nào (tránh trùng lặp). Tài khoản (mật khẩu `Admin@123` cho SuperAdmin, `User@123` cho còn lại):
+nào (tránh trùng lặp). Tài khoản (mật khẩu `Admin@123` cho SuperAdmin + Admin, `User@123` cho Manager/User/cá nhân):
+
+> ⚠ File lưu UTF-8 có tiếng Việt. SSMS Execute trực tiếp là đúng; nếu chạy bằng
+> `sqlcmd` phải thêm cờ codepage `-f 65001`, nếu không tên sẽ bị lỗi font.
 
 | Vai trò | Email | Loại |
 |---------|-------|------|
@@ -268,10 +284,11 @@ nào (tránh trùng lặp). Tài khoản (mật khẩu `Admin@123` cho SuperAdmi
 | User độc lập | ha.pham@cetee.vn, lam.trinh@cetee.vn | Cá nhân |
 
 Kèm theo: **15 người dùng** (1 SA + 2 Admin + 3 Manager + 7 nhân viên + 2 cá nhân),
-**3 workspace** có thành viên, **6 project** có thành viên, **18 task** chia
-Todo/Doing/Done (có task quá hạn minh họa **Overdue** và task đã xếp lịch trên
-**Timeline**), page ghi chú, comment, notification, activity log — minh họa đầy đủ
-phân cấp, quản lý thành viên và tách Cá nhân/Nhân viên.
+**4 workspace** (3 workspace nhóm + **1 không gian cá nhân** của ha.pham), **7 project**
+có thành viên, **21 task** chia Todo/Doing/Done (có task quá hạn minh họa **Overdue**
+và task đã xếp lịch trên **Timeline**), trong đó **4 task đa phụ trách** (nhiều người
+cùng làm — vd "Tích hợp VNPay" giao cho 3 người), page ghi chú, comment, notification,
+activity log — minh họa đầy đủ phân cấp, quản lý thành viên và tách Cá nhân/Nhân viên.
 
 ## 9. Hướng dẫn chạy project
 

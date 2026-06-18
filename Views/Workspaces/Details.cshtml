@@ -2,11 +2,15 @@
 @{
     ViewData["Title"] = Model.Workspace.Name;
     var ws = Model.Workspace;
+    bool canEditWs = Model.CanManageMembers; // chủ sở hữu hoặc SuperAdmin
 }
 
 @section TopbarAction {
     <div class="page-actions">
-        <a class="btn btn-secondary" asp-action="Edit" asp-route-id="@ws.Id">Sửa workspace</a>
+        @if (canEditWs)
+        {
+            <a class="btn btn-secondary" asp-action="Edit" asp-route-id="@ws.Id">Sửa workspace</a>
+        }
         <a class="btn btn-primary" asp-controller="Projects" asp-action="Create" asp-route-workspaceId="@ws.Id">Thêm project</a>
     </div>
 }
@@ -16,57 +20,33 @@
 
 <div class="card mb-2">
     <div class="card-body">
+        <div class="ws-card-head">
+            <span class="tag plain @(Model.IsPersonal ? "tag-todo" : "tag-doing")">
+                @(Model.IsPersonal ? "Không gian cá nhân" : "Workspace nhóm")
+            </span>
+            <span class="tag plain @Model.MyRole.CssClass()">Vai trò của bạn: @Model.MyRole.Label()</span>
+        </div>
         <p class="muted mb-1">@(string.IsNullOrEmpty(ws.Description) ? "Không có mô tả" : ws.Description)</p>
         <div class="detail-meta text-sm muted">
             <span>Chủ sở hữu: <b>@ws.Owner.FullName</b></span>
             <span>@Model.Members.Count thành viên</span>
             <span>@Model.Projects.Count project</span>
+            <span>@Model.TaskCount task</span>
         </div>
     </div>
 </div>
 
 <div class="grid grid-2">
-    <!-- Thành viên workspace -->
-    <div class="card">
-        <div class="card-body">
-            <h3 class="mt-0">Thành viên (@Model.Members.Count)</h3>
-            <div class="table-wrap">
-                <table class="table">
-                    <thead><tr><th>Họ tên</th><th>Chức vụ</th><th>Vai trò</th><th class="text-right"></th></tr></thead>
-                    <tbody>
-                    @foreach (var m in Model.Members)
-                    {
-                        <tr>
-                            <td>
-                                <div class="cell-user">
-                                    <partial name="_Avatar" model="@m.User.FullName" />
-                                    <span>@m.User.FullName</span>
-                                </div>
-                            </td>
-                            <td class="muted text-sm">@Roles.Label(m.User.Role?.Name)</td>
-                            <td><span class="tag @m.Role.CssClass() plain">@m.Role.Label()</span></td>
-                            <td class="text-right">
-                                @if (Model.CanManageMembers && m.UserId != ws.OwnerId)
-                                {
-                                    <form class="inline-form" asp-action="RemoveMember" method="post"
-                                          onsubmit="return confirm('Gỡ @m.User.FullName khỏi workspace? Họ cũng bị gỡ khỏi các project trong workspace này.');">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="workspaceId" value="@ws.Id" />
-                                        <input type="hidden" name="userId" value="@m.UserId" />
-                                        <button type="submit" class="btn btn-danger btn-sm">Gỡ</button>
-                                    </form>
-                                }
-                            </td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
-
-            @if (Model.CanManageMembers)
-            {
-                @if (Model.AddableUsers.Any())
+    @if (Model.IsPersonal)
+    {
+        <!-- Không gian cá nhân: không cần quản lý thành viên -->
+        <div class="card">
+            <div class="card-body">
+                <h3 class="mt-0">Không gian cá nhân</h3>
+                <p class="muted">Đây là không gian riêng của bạn — chỉ mình bạn truy cập. Hãy tạo project và task để sắp xếp công việc cá nhân.</p>
+                @if (Model.CanManageMembers && Model.AddableUsers.Any())
                 {
+                    <p class="muted text-sm">Muốn cộng tác? Thêm người vào bên dưới để chuyển thành workspace nhóm.</p>
                     <form class="inline-form mt-1" asp-action="AddMember" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="workspaceId" value="@ws.Id" />
@@ -80,13 +60,95 @@
                         <button type="submit" class="btn btn-primary btn-sm">Thêm</button>
                     </form>
                 }
-                else
-                {
-                    <p class="muted text-sm mt-1">Không còn ai trong phạm vi quản lý của bạn để thêm.</p>
-                }
-            }
+            </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <!-- Thành viên workspace -->
+        <div class="card">
+            <div class="card-body">
+                <h3 class="mt-0">Thành viên (@Model.Members.Count)</h3>
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead><tr><th>Họ tên</th><th>Chức vụ</th><th>Vai trò</th><th class="text-right"></th></tr></thead>
+                        <tbody>
+                        @foreach (var m in Model.Members)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="cell-user">
+                                        <partial name="_Avatar" model="@m.User.FullName" />
+                                        <span>@m.User.FullName</span>
+                                    </div>
+                                </td>
+                                <td class="muted text-sm">@Roles.Label(m.User.Role?.Name)</td>
+                                <td><span class="tag @m.Role.CssClass() plain">@m.Role.Label()</span></td>
+                                <td class="text-right">
+                                    @if (Model.CanManageMembers && m.UserId != ws.OwnerId)
+                                    {
+                                        <div class="member-actions">
+                                            @if (m.Role != MemberRole.Manager)
+                                            {
+                                                <form class="inline-form" asp-action="SetMemberRole" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="workspaceId" value="@ws.Id" />
+                                                    <input type="hidden" name="userId" value="@m.UserId" />
+                                                    <input type="hidden" name="role" value="@((int)MemberRole.Manager)" />
+                                                    <button type="submit" class="btn btn-secondary btn-sm" title="Đặt làm quản lý">↑ Quản lý</button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form class="inline-form" asp-action="SetMemberRole" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="workspaceId" value="@ws.Id" />
+                                                    <input type="hidden" name="userId" value="@m.UserId" />
+                                                    <input type="hidden" name="role" value="@((int)MemberRole.Member)" />
+                                                    <button type="submit" class="btn btn-secondary btn-sm" title="Hạ xuống thành viên">↓ Thành viên</button>
+                                                </form>
+                                            }
+                                            <form class="inline-form" asp-action="RemoveMember" method="post"
+                                                  onsubmit="return confirm('Gỡ @m.User.FullName khỏi workspace? Họ cũng bị gỡ khỏi các project trong workspace này.');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="workspaceId" value="@ws.Id" />
+                                                <input type="hidden" name="userId" value="@m.UserId" />
+                                                <button type="submit" class="btn btn-danger btn-sm">Gỡ</button>
+                                            </form>
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (Model.CanManageMembers)
+                {
+                    @if (Model.AddableUsers.Any())
+                    {
+                        <form class="inline-form mt-1" asp-action="AddMember" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="workspaceId" value="@ws.Id" />
+                            <select name="userId" class="form-control form-control-sm" required>
+                                <option value="">— Chọn người để thêm —</option>
+                                @foreach (var u in Model.AddableUsers)
+                                {
+                                    <option value="@u.Id">@u.FullName (@Roles.Label(u.Role?.Name))</option>
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm">Thêm</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="muted text-sm mt-1">Không còn ai trong phạm vi quản lý của bạn để thêm.</p>
+                    }
+                }
+            </div>
+        </div>
+    }
 
     <!-- Project trong workspace -->
     <div class="card">

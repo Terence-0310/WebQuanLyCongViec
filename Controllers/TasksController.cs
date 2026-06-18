@@ -136,7 +136,7 @@ public class TasksController : BaseController
             Title = task.Title,
             Description = task.Description,
             ProjectId = task.ProjectId,
-            AssigneeId = task.AssigneeId,
+            AssigneeIds = task.Assignees.Select(a => a.UserId).ToList(),
             Priority = task.Priority,
             Status = task.Status,
             DueDate = task.DueDate,
@@ -207,7 +207,7 @@ public class TasksController : BaseController
         {
             var members = await _tasks.GetProjectMembersAsync(model.ProjectId);
             model.AssigneeOptions = members
-                .Select(u => new SelectListItem(u.FullName, u.Id.ToString(), u.Id == model.AssigneeId))
+                .Select(u => new SelectListItem(u.FullName, u.Id.ToString(), model.AssigneeIds.Contains(u.Id)))
                 .ToList();
         }
     }

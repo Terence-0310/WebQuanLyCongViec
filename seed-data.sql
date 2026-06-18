@@ -12,13 +12,20 @@
    Script chỉ chèn dữ liệu nghiệp vụ khi DB CHƯA có Workspace nào (tránh trùng).
    => Để nạp lại từ đầu: xóa dữ liệu cũ (hoặc DROP/again `database update`) rồi chạy.
 
-   Tài khoản đăng nhập (mật khẩu Admin@123 cho SuperAdmin, User@123 cho còn lại):
+   ⚠ MÃ HÓA (QUAN TRỌNG): file lưu UTF-8 và có tiếng Việt có dấu.
+     - SSMS: mở/Execute trực tiếp -> đúng (SSMS đọc UTF-8/Unicode).
+     - sqlcmd: PHẢI thêm cờ codepage UTF-8, nếu không tiếng Việt sẽ lỗi font:
+         sqlcmd -S .\SQLEXPRESS -d CeteeDb -f 65001 -i seed-data.sql
+       (Thiếu -f 65001 sẽ khiến tên hiển thị thành "NgÃ´ Báº£o ChÃ¢u"...)
+
+   Tài khoản đăng nhập:
+     Mật khẩu: Admin@123 cho SuperAdmin + Admin; User@123 cho Manager + User + cá nhân.
      SuperAdmin : admin@example.com
      Admin      : khoa.phan@cetee.vn (Kỹ thuật), chau.ngo@cetee.vn (Kinh doanh)
      Manager    : quan.le@cetee.vn (Dev), dang.vu@cetee.vn (QA), trang.do@cetee.vn (MKT)
      User       : ducanh.tran, mai.vo, huy.bui (đội Quân); nga.phan, bao.ly (đội Đăng);
                   nhi.ho, kiet.dinh (đội Trang)
-     Độc lập    : ha.pham@cetee.vn, lam.trinh@cetee.vn
+     Cá nhân    : ha.pham@cetee.vn (có workspace "Công việc cá nhân"), lam.trinh@cetee.vn
    ===================================================================== */
 
 USE CeteeDb;
@@ -158,31 +165,85 @@ INSERT INTO Pages (ProjectId,Title,Content,CreatedAt,UpdatedAt) VALUES
 -- TASKS (Priority 0/1/2 = Thấp/TB/Cao | Status 0/1/2 = Todo/Doing/Done)
 -- Một số task có ScheduledStart (lịch ngày hôm nay) và có task quá hạn.
 -- =========================================================
-INSERT INTO Tasks (Title,Description,Priority,Status,DueDate,ScheduledStart,DurationMinutes,ProjectId,AssigneeId,CreatedAt) VALUES
+INSERT INTO Tasks (Title,Description,Priority,Status,DueDate,ScheduledStart,DurationMinutes,ProjectId,CreatedAt) VALUES
 -- pWeb
- (N'Thiết kế giao diện trang chủ',N'Layout trang chủ responsive.',2,2,DATEADD(day,-22,@now),NULL,60,@pWeb,@mai,DATEADD(day,-33,@now)),
- (N'Tích hợp cổng thanh toán VNPay',N'Kết nối VNPay cho luồng thanh toán.',2,1,DATEADD(day,5,@now),DATEADD(minute,540,@today),90,@pWeb,@ducanh,DATEADD(day,-20,@now)),
- (N'Xây dựng API giỏ hàng',N'CRUD giỏ hàng, đồng bộ người dùng.',1,1,DATEADD(day,3,@now),NULL,60,@pWeb,@huy,DATEADD(day,-16,@now)),
- (N'Kiểm thử luồng đặt hàng',N'Test từ thêm giỏ tới thanh toán.',1,0,DATEADD(day,-1,@now),NULL,60,@pWeb,@mai,DATEADD(day,-9,@now)),
+ (N'Thiết kế giao diện trang chủ',N'Layout trang chủ responsive.',2,2,DATEADD(day,-22,@now),NULL,60,@pWeb,DATEADD(day,-33,@now)),
+ (N'Tích hợp cổng thanh toán VNPay',N'Kết nối VNPay cho luồng thanh toán.',2,1,DATEADD(day,5,@now),DATEADD(minute,540,@today),90,@pWeb,DATEADD(day,-20,@now)),
+ (N'Xây dựng API giỏ hàng',N'CRUD giỏ hàng, đồng bộ người dùng.',1,1,DATEADD(day,3,@now),NULL,60,@pWeb,DATEADD(day,-16,@now)),
+ (N'Kiểm thử luồng đặt hàng',N'Test từ thêm giỏ tới thanh toán.',1,0,DATEADD(day,-1,@now),NULL,60,@pWeb,DATEADD(day,-9,@now)),
 -- pMobile
- (N'Dựng màn hình đăng nhập app',N'Đăng nhập và đăng ký cho mobile.',1,2,DATEADD(day,-14,@now),NULL,60,@pMobile,@mai,DATEADD(day,-24,@now)),
- (N'Push notification đơn hàng',N'Gửi trạng thái đơn hàng tới khách.',2,1,DATEADD(day,7,@now),DATEADD(minute,840,@today),60,@pMobile,@ducanh,DATEADD(day,-10,@now)),
- (N'Màn hình chi tiết sản phẩm',N'Hình ảnh, mô tả, giá, nút mua.',1,0,DATEADD(day,9,@now),NULL,60,@pMobile,@huy,DATEADD(day,-6,@now)),
+ (N'Dựng màn hình đăng nhập app',N'Đăng nhập và đăng ký cho mobile.',1,2,DATEADD(day,-14,@now),NULL,60,@pMobile,DATEADD(day,-24,@now)),
+ (N'Push notification đơn hàng',N'Gửi trạng thái đơn hàng tới khách.',2,1,DATEADD(day,7,@now),DATEADD(minute,840,@today),60,@pMobile,DATEADD(day,-10,@now)),
+ (N'Màn hình chi tiết sản phẩm',N'Hình ảnh, mô tả, giá, nút mua.',1,0,DATEADD(day,9,@now),NULL,60,@pMobile,DATEADD(day,-6,@now)),
 -- pErp
- (N'Thiết kế cơ sở dữ liệu kho',N'Bảng sản phẩm, tồn kho, phiếu nhập xuất.',2,2,DATEADD(day,-8,@now),NULL,60,@pErp,@quan,DATEADD(day,-18,@now)),
- (N'Báo cáo tồn kho theo tháng',N'Tổng hợp nhập xuất tồn, xuất Excel.',1,0,DATEADD(day,14,@now),NULL,60,@pErp,@bao,DATEADD(day,-5,@now)),
- (N'Cảnh báo hàng sắp hết',N'Cảnh báo khi tồn dưới mức tối thiểu.',0,0,DATEADD(day,-3,@now),NULL,60,@pErp,@bao,DATEADD(day,-4,@now)),
+ (N'Thiết kế cơ sở dữ liệu kho',N'Bảng sản phẩm, tồn kho, phiếu nhập xuất.',2,2,DATEADD(day,-8,@now),NULL,60,@pErp,DATEADD(day,-18,@now)),
+ (N'Báo cáo tồn kho theo tháng',N'Tổng hợp nhập xuất tồn, xuất Excel.',1,0,DATEADD(day,14,@now),NULL,60,@pErp,DATEADD(day,-5,@now)),
+ (N'Cảnh báo hàng sắp hết',N'Cảnh báo khi tồn dưới mức tối thiểu.',0,0,DATEADD(day,-3,@now),NULL,60,@pErp,DATEADD(day,-4,@now)),
 -- pAuto
- (N'Dựng khung test tự động',N'Thiết lập framework cho web và API.',2,1,DATEADD(day,4,@now),DATEADD(minute,600,@today),120,@pAuto,@nga,DATEADD(day,-26,@now)),
- (N'Viết test luồng mua hàng',N'Smoke test cho luồng mua hàng chính.',1,1,DATEADD(day,6,@now),NULL,90,@pAuto,@bao,DATEADD(day,-15,@now)),
- (N'Tích hợp CI chạy test',N'Chạy test tự động trên mỗi commit.',1,0,DATEADD(day,10,@now),NULL,60,@pAuto,@nga,DATEADD(day,-7,@now)),
+ (N'Dựng khung test tự động',N'Thiết lập framework cho web và API.',2,1,DATEADD(day,4,@now),DATEADD(minute,600,@today),120,@pAuto,DATEADD(day,-26,@now)),
+ (N'Viết test luồng mua hàng',N'Smoke test cho luồng mua hàng chính.',1,1,DATEADD(day,6,@now),NULL,90,@pAuto,DATEADD(day,-15,@now)),
+ (N'Tích hợp CI chạy test',N'Chạy test tự động trên mỗi commit.',1,0,DATEADD(day,10,@now),NULL,60,@pAuto,DATEADD(day,-7,@now)),
 -- pPerf
- (N'Kịch bản kiểm thử tải',N'Mô phỏng 1000 người dùng đồng thời.',2,1,DATEADD(day,8,@now),NULL,90,@pPerf,@nga,DATEADD(day,-20,@now)),
- (N'Tối ưu truy vấn chậm',N'Phát hiện và tối ưu các truy vấn nặng.',2,0,DATEADD(day,-2,@now),NULL,60,@pPerf,@bao,DATEADD(day,-9,@now)),
+ (N'Kịch bản kiểm thử tải',N'Mô phỏng 1000 người dùng đồng thời.',2,1,DATEADD(day,8,@now),NULL,90,@pPerf,DATEADD(day,-20,@now)),
+ (N'Tối ưu truy vấn chậm',N'Phát hiện và tối ưu các truy vấn nặng.',2,0,DATEADD(day,-2,@now),NULL,60,@pPerf,DATEADD(day,-9,@now)),
 -- pCampaign
- (N'Lên kế hoạch nội dung mạng xã hội',N'Lịch bài đăng Facebook và TikTok.',2,1,DATEADD(day,4,@now),DATEADD(minute,630,@today),120,@pCampaign,@nhi,DATEADD(day,-12,@now)),
- (N'Thiết kế ấn phẩm quảng cáo',N'Banner, poster, bộ ảnh chiến dịch.',1,0,DATEADD(day,6,@now),NULL,60,@pCampaign,@kiet,DATEADD(day,-6,@now)),
- (N'Liên hệ KOL/Influencer',N'Tìm và chốt hợp tác với KOL phù hợp.',1,2,DATEADD(day,-5,@now),NULL,60,@pCampaign,@nhi,DATEADD(day,-11,@now));
+ (N'Lên kế hoạch nội dung mạng xã hội',N'Lịch bài đăng Facebook và TikTok.',2,1,DATEADD(day,4,@now),DATEADD(minute,630,@today),120,@pCampaign,DATEADD(day,-12,@now)),
+ (N'Thiết kế ấn phẩm quảng cáo',N'Banner, poster, bộ ảnh chiến dịch.',1,0,DATEADD(day,6,@now),NULL,60,@pCampaign,DATEADD(day,-6,@now)),
+ (N'Liên hệ KOL/Influencer',N'Tìm và chốt hợp tác với KOL phù hợp.',1,2,DATEADD(day,-5,@now),NULL,60,@pCampaign,DATEADD(day,-11,@now));
+
+-- =========================================================
+-- KHÔNG GIAN CÁ NHÂN (minh họa trải nghiệm cho tài khoản cá nhân độc lập)
+-- Chủ sở hữu là user độc lập @ha; chỉ một thành viên, tự quản lý việc riêng.
+-- =========================================================
+INSERT INTO Workspaces (Name,Description,OwnerId,CreatedAt) VALUES (N'Công việc cá nhân', N'Không gian riêng để sắp xếp công việc và mục tiêu cá nhân.', @ha, DATEADD(day,-30,@now));
+DECLARE @wsPersonal INT=SCOPE_IDENTITY();
+INSERT INTO WorkspaceMembers (WorkspaceId,UserId,Role,JoinedAt) VALUES (@wsPersonal,@ha,2,DATEADD(day,-30,@now));
+
+INSERT INTO Projects (Name,Description,WorkspaceId,CreatedAt) VALUES (N'Mục tiêu năm nay', N'Theo dõi các mục tiêu học tập và phát triển bản thân.', @wsPersonal, DATEADD(day,-28,@now));
+DECLARE @pGoals INT=SCOPE_IDENTITY();
+INSERT INTO ProjectMembers (ProjectId,UserId,Role,JoinedAt) VALUES (@pGoals,@ha,2,DATEADD(day,-28,@now));
+
+INSERT INTO Tasks (Title,Description,Priority,Status,DueDate,ScheduledStart,DurationMinutes,ProjectId,CreatedAt) VALUES
+ (N'Học khóa lập trình web',N'Hoàn thành khóa ASP.NET Core.',2,1,DATEADD(day,10,@now),DATEADD(minute,1140,@today),90,@pGoals,DATEADD(day,-26,@now)),
+ (N'Đọc 1 cuốn sách mỗi tháng',N'Sách kỹ năng hoặc chuyên môn.',1,1,DATEADD(day,5,@now),NULL,60,@pGoals,DATEADD(day,-20,@now)),
+ (N'Tập thể dục đều đặn',N'Chạy bộ 3 buổi/tuần.',0,2,DATEADD(day,-3,@now),NULL,45,@pGoals,DATEADD(day,-15,@now));
+
+-- =========================================================
+-- PHÂN CÔNG (đa phụ trách): mỗi task có thể có NHIỀU người cùng làm.
+-- Ghép theo tiêu đề task (tiêu đề là duy nhất). Liệt kê 1 tiêu đề nhiều lần =
+-- nhiều người cùng làm 1 việc (vd VNPay, CSDL kho, khung test, nội dung MXH).
+-- =========================================================
+INSERT INTO TaskAssignees (TaskItemId, UserId)
+SELECT t.Id, x.UserId
+FROM Tasks t
+JOIN (VALUES
+    (N'Thiết kế giao diện trang chủ', @mai),
+    (N'Tích hợp cổng thanh toán VNPay', @ducanh),
+    (N'Tích hợp cổng thanh toán VNPay', @quan),   -- cùng làm
+    (N'Tích hợp cổng thanh toán VNPay', @huy),    -- cùng làm
+    (N'Xây dựng API giỏ hàng', @huy),
+    (N'Kiểm thử luồng đặt hàng', @mai),
+    (N'Dựng màn hình đăng nhập app', @mai),
+    (N'Push notification đơn hàng', @ducanh),
+    (N'Màn hình chi tiết sản phẩm', @huy),
+    (N'Thiết kế cơ sở dữ liệu kho', @quan),
+    (N'Thiết kế cơ sở dữ liệu kho', @bao),         -- cùng làm
+    (N'Báo cáo tồn kho theo tháng', @bao),
+    (N'Cảnh báo hàng sắp hết', @bao),
+    (N'Dựng khung test tự động', @nga),
+    (N'Dựng khung test tự động', @bao),            -- cùng làm
+    (N'Viết test luồng mua hàng', @bao),
+    (N'Tích hợp CI chạy test', @nga),
+    (N'Kịch bản kiểm thử tải', @nga),
+    (N'Tối ưu truy vấn chậm', @bao),
+    (N'Lên kế hoạch nội dung mạng xã hội', @nhi),
+    (N'Lên kế hoạch nội dung mạng xã hội', @kiet), -- cùng làm
+    (N'Thiết kế ấn phẩm quảng cáo', @kiet),
+    (N'Liên hệ KOL/Influencer', @nhi),
+    (N'Học khóa lập trình web', @ha),
+    (N'Đọc 1 cuốn sách mỗi tháng', @ha),
+    (N'Tập thể dục đều đặn', @ha)
+) AS x(Title, UserId) ON t.Title = x.Title;
 
 -- =========================================================
 -- COMMENTS, NOTIFICATIONS, ACTIVITY LOGS (tham chiếu task theo tiêu đề)

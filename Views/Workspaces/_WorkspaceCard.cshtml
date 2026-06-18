@@ -1,0 +1,52 @@
+@model WorkspaceCardViewModel
+@{
+    var ws = Model.Workspace;
+    var members = ws.Members.OrderByDescending(m => m.Role).ToList();
+}
+
+<div class="card ws-card">
+    <div class="card-body">
+        <div class="ws-card-head">
+            <span class="tag plain @(Model.IsPersonal ? "tag-todo" : "tag-doing")">
+                @(Model.IsPersonal ? "Cá nhân" : "Nhóm")
+            </span>
+            <span class="tag plain @Model.MyRole.CssClass()">@Model.MyRole.Label()</span>
+        </div>
+
+        <div class="card-title"><a asp-action="Details" asp-route-id="@ws.Id">@ws.Name</a></div>
+        <p class="muted text-sm ws-card-desc">@(string.IsNullOrEmpty(ws.Description) ? "Không có mô tả" : ws.Description)</p>
+
+        <div class="ws-card-stats text-sm muted">
+            <span>@ws.Projects.Count project</span>
+            <span>@Model.TaskCount task</span>
+            <span>@ws.Members.Count thành viên</span>
+        </div>
+
+        @if (!Model.IsPersonal)
+        {
+            <div class="avatar-stack" title="@string.Join(", ", members.Select(m => m.User.FullName))">
+                @foreach (var m in members.Take(5))
+                {
+                    <partial name="_Avatar" model="@m.User.FullName" />
+                }
+                @if (members.Count > 5)
+                {
+                    <span class="avatar avatar-more">+@(members.Count - 5)</span>
+                }
+            </div>
+        }
+
+        <div class="form-actions">
+            <a class="btn btn-secondary btn-sm" asp-action="Details" asp-route-id="@ws.Id">Chi tiết</a>
+            @if (Model.IsOwner || Model.MyRole == MemberRole.Owner)
+            {
+                <a class="btn btn-secondary btn-sm" asp-action="Edit" asp-route-id="@ws.Id">Sửa</a>
+                <form class="inline-form" asp-action="Delete" asp-route-id="@ws.Id" method="post"
+                      onsubmit="return confirm('Xóa workspace này và toàn bộ project bên trong?');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                </form>
+            }
+        </div>
+    </div>
+</div>

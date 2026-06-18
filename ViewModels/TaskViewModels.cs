@@ -23,7 +23,7 @@ public class TaskFormViewModel
     public int ProjectId { get; set; }
 
     [Display(Name = "Người thực hiện")]
-    public int? AssigneeId { get; set; }
+    public List<int> AssigneeIds { get; set; } = new();
 
     [Display(Name = "Mức ưu tiên")]
     public TaskPriority Priority { get; set; } = TaskPriority.Medium;

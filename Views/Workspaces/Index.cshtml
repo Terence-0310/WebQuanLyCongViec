@@ -1,41 +1,48 @@
-@model IEnumerable<Workspace>
+@model WorkspaceIndexViewModel
 @{
     ViewData["Title"] = "Workspaces";
 }
 
 @section TopbarAction {
-    <a class="btn btn-primary" asp-action="Create">Tạo workspace</a>
+    <a class="btn btn-primary" asp-action="Create">@(Model.ViewerIsPersonal ? "Tạo không gian" : "Tạo workspace")</a>
 }
 
-@if (!Model.Any())
+@if (TempData["Success"] is string ok) { <div class="flash flash-success">@ok</div> }
+@if (TempData["Error"] is string err) { <div class="flash flash-error">@err</div> }
+
+@if (!Model.HasAny)
 {
     <div class="card"><div class="empty">
-        <div class="empty-title">Chưa có workspace</div>
-        <p>Tạo workspace đầu tiên để bắt đầu quản lý dự án.</p>
-        <a class="btn btn-primary mt-1" asp-action="Create">Tạo workspace</a>
+        <div class="empty-title">@(Model.ViewerIsPersonal ? "Chưa có không gian làm việc" : "Chưa có workspace")</div>
+        <p>
+            @(Model.ViewerIsPersonal
+                ? "Tạo một không gian cá nhân để sắp xếp project và công việc của riêng bạn."
+                : "Tạo workspace đầu tiên để bắt đầu quản lý dự án cùng đội ngũ.")
+        </p>
+        <a class="btn btn-primary mt-1" asp-action="Create">@(Model.ViewerIsPersonal ? "Tạo không gian" : "Tạo workspace")</a>
     </div></div>
 }
 else
 {
-    <div class="grid grid-3">
-        @foreach (var ws in Model)
-        {
-            <div class="card">
-                <div class="card-body">
-                    <div class="card-title"><a asp-action="Details" asp-route-id="@ws.Id">@ws.Name</a></div>
-                    <p class="muted text-sm">@(string.IsNullOrEmpty(ws.Description) ? "Không có mô tả" : ws.Description)</p>
-                    <p class="text-sm muted">@ws.Projects.Count project • @ws.Members.Count thành viên • Chủ sở hữu: @ws.Owner.FullName</p>
-                    <div class="form-actions">
-                        <a class="btn btn-secondary btn-sm" asp-action="Details" asp-route-id="@ws.Id">Chi tiết</a>
-                        <a class="btn btn-secondary btn-sm" asp-action="Edit" asp-route-id="@ws.Id">Sửa</a>
-                        <form class="inline-form" asp-action="Delete" asp-route-id="@ws.Id" method="post"
-                              onsubmit="return confirm('Xóa workspace này và toàn bộ project bên trong?');">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
+    @if (Model.Owned.Any())
+    {
+        <h3 class="section-heading">@(Model.ViewerIsPersonal ? "Không gian của tôi" : "Workspace tôi sở hữu") (@Model.Owned.Count)</h3>
+        <div class="grid grid-3 mb-2">
+            @foreach (var c in Model.Owned)
+            {
+                <partial name="_WorkspaceCard" model="c" />
+            }
+        </div>
+    }
+
+    @if (Model.Joined.Any())
+    {
+        <h3 class="section-heading">Tôi tham gia (@Model.Joined.Count)</h3>
+        <div class="grid grid-3">
+            @foreach (var c in Model.Joined)
+            {
+                <partial name="_WorkspaceCard" model="c" />
+            }
+        </div>
+    }
 }

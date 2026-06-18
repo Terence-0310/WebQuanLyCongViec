@@ -28,11 +28,7 @@
                     </div>
                     <div class="proj-meta mb-0" style="margin-bottom:8px;">@t.Project?.Name</div>
                     <div class="kanban-card-foot">
-                        @if (t.Assignee != null)
-                        {
-                            <div class="cell-user"><partial name="_Avatar" model="@t.Assignee.FullName" /><span class="text-sm muted">@t.Assignee.FullName</span></div>
-                        }
-                        else { <span class="text-sm muted">Chưa giao</span> }
+                        <partial name="_Assignees" model="t.AssignedUsers" />
                     </div>
                     <!-- Đổi trạng thái bằng dropdown, tự submit khi chọn -->
                     <form asp-action="ChangeStatus" method="post" class="kanban-move-form">

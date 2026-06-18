@@ -58,7 +58,7 @@ public class ProjectService : IProjectService
         var project = await Accessible(userId, seeAll)
             .Include(p => p.Workspace)
             .Include(p => p.Pages)
-            .Include(p => p.Tasks).ThenInclude(t => t.Assignee)
+            .Include(p => p.Tasks).ThenInclude(t => t.Assignees).ThenInclude(a => a.User)
             .Include(p => p.Members).ThenInclude(m => m.User).ThenInclude(u => u.Role)
             .FirstOrDefaultAsync(p => p.Id == id);
 

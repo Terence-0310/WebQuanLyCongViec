@@ -1,0 +1,25 @@
+@model IEnumerable<Cetee.Models.User>
+@* Hiển thị danh sách người thực hiện (đa phụ trách): xếp chồng avatar + tên. *@
+@{
+    var users = (Model ?? Enumerable.Empty<Cetee.Models.User>()).ToList();
+}
+@if (users.Count == 0)
+{
+    <span class="muted text-sm">Chưa giao</span>
+}
+else
+{
+    <div class="cell-user">
+        <div class="avatar-stack">
+            @foreach (var u in users.Take(4))
+            {
+                <partial name="_Avatar" model="@u.FullName" />
+            }
+            @if (users.Count > 4)
+            {
+                <span class="avatar avatar-more">+@(users.Count - 4)</span>
+            }
+        </div>
+        <span class="text-sm muted">@string.Join(", ", users.Select(u => u.FullName))</span>
+    </div>
+}

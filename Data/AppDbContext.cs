@@ -16,6 +16,7 @@ public class AppDbContext : IdentityDbContext<User, Role, int>
     public DbSet<ProjectMember> ProjectMembers => Set<ProjectMember>();
     public DbSet<Page> Pages => Set<Page>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
+    public DbSet<TaskAssignee> TaskAssignees => Set<TaskAssignee>();
     public DbSet<TaskComment> TaskComments => Set<TaskComment>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
@@ -84,12 +85,24 @@ public class AppDbContext : IdentityDbContext<User, Role, int>
             .HasForeignKey(t => t.ProjectId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Người được giao task: không cascade (xóa user không xóa task).
-        modelBuilder.Entity<TaskItem>()
-            .HasOne(t => t.Assignee)
-            .WithMany(u => u.AssignedTasks)
-            .HasForeignKey(t => t.AssigneeId)
-            .OnDelete(DeleteBehavior.SetNull);
+        // Đa phụ trách: bảng nối TaskAssignee (nhiều-nhiều giữa Task và User).
+        modelBuilder.Entity<TaskAssignee>()
+            .HasKey(ta => new { ta.TaskItemId, ta.UserId });
+
+        // Xóa task -> gỡ luôn các phân công của nó (cascade).
+        modelBuilder.Entity<TaskAssignee>()
+            .HasOne(ta => ta.TaskItem)
+            .WithMany(t => t.Assignees)
+            .HasForeignKey(ta => ta.TaskItemId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Xóa user -> KHÔNG cascade (tránh nhiều đường cascade tới cùng bảng);
+        // phân công của user sẽ được gỡ thủ công khi xóa user.
+        modelBuilder.Entity<TaskAssignee>()
+            .HasOne(ta => ta.User)
+            .WithMany(u => u.TaskAssignments)
+            .HasForeignKey(ta => ta.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Comment thuộc task (cascade) và user (restrict để tránh vòng cascade).
         modelBuilder.Entity<TaskComment>()

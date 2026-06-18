@@ -68,13 +68,7 @@ else
                 <tr>
                     <td><a asp-action="Details" asp-route-id="@t.Id">@t.Title</a></td>
                     <td class="muted text-sm">@t.Project?.Name</td>
-                    <td>
-                        @if (t.Assignee != null)
-                        {
-                            <div class="cell-user"><partial name="_Avatar" model="@t.Assignee.FullName" /><span class="text-sm">@t.Assignee.FullName</span></div>
-                        }
-                        else { <span class="muted text-sm">—</span> }
-                    </td>
+                    <td><partial name="_Assignees" model="t.AssignedUsers" /></td>
                     <td><span class="tag @t.Priority.CssClass()">@t.Priority.Label()</span></td>
                     <td><span class="tag @t.Status.CssClass()">@t.Status.Label()</span></td>
                     <td class="text-sm">

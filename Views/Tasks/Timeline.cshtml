@@ -135,8 +135,9 @@
                             <div class="cal-event-title">@t.Title</div>
                             @if (height >= 38)
                             {
+                                var who = t.AssignedUsers.Any() ? string.Join(", ", t.AssignedUsers.Select(u => u.FullName)) : "Chưa giao";
                                 <div class="cal-event-sub">
-                                    <span class="cal-event-who">@(t.Assignee?.FullName ?? "Chưa giao")</span>@(height >= 58 && t.Project != null ? " · " + t.Project.Name : "")
+                                    <span class="cal-event-who">@who</span>@(height >= 58 && t.Project != null ? " · " + t.Project.Name : "")
                                 </div>
                             }
                             <div class="cal-resize" title="Kéo để đổi thời lượng"></div>
@@ -166,8 +167,7 @@
                             <span>@t.Project?.Name</span>
                         </div>
                         <div class="tl-chip-who">
-                            <partial name="_Avatar" model="@(t.Assignee?.FullName ?? "?")" />
-                            <span class="text-sm muted">@(t.Assignee?.FullName ?? "Chưa giao")</span>
+                            <partial name="_Assignees" model="t.AssignedUsers" />
                         </div>
                     </div>
                 }
