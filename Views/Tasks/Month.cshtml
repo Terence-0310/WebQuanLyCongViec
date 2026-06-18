@@ -1,0 +1,71 @@
+@model MonthCalendarViewModel
+@{
+    ViewData["Title"] = "Lịch tháng";
+    var emp = ViewContext.HttpContext.Request.Query["employeeId"].ToString();
+    var dIso = Model.MonthStart.ToString("yyyy-MM-dd");
+    var weekdays = new[] { "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật" };
+    string Px(TaskItem t) => t.Priority.ToString().ToLower();
+}
+
+@section TopbarAction {
+    <div class="page-actions">
+        <partial name="_EmployeePicker" model="Model.Scope" />
+        <a class="btn btn-secondary" asp-action="Index">Danh sách</a>
+        <a class="btn btn-primary" asp-action="Create">Tạo task</a>
+    </div>
+}
+
+<div class="cal-toolbar">
+    <div class="cal-tabs">
+        <a class="cal-tab" asp-action="Timeline" asp-route-date="@dIso" asp-route-employeeId="@emp">Ngày</a>
+        <a class="cal-tab" asp-action="Week" asp-route-date="@dIso" asp-route-employeeId="@emp">Tuần</a>
+        <a class="cal-tab active" asp-action="Month" asp-route-date="@dIso" asp-route-employeeId="@emp">Tháng</a>
+    </div>
+    <div class="date-nav">
+        <a class="btn btn-secondary btn-sm" asp-action="Month" asp-route-date="@Model.PrevMonth.ToString("yyyy-MM-dd")" asp-route-employeeId="@emp">‹ Tháng trước</a>
+        <a class="btn btn-secondary btn-sm" asp-action="Month" asp-route-date="@Model.NextMonth.ToString("yyyy-MM-dd")" asp-route-employeeId="@emp">Tháng sau ›</a>
+        @if (!Model.IsThisMonth)
+        {
+            <a class="btn btn-secondary btn-sm" asp-action="Month" asp-route-employeeId="@emp">Tháng này</a>
+        }
+        <span class="cal-range">Tháng @Model.MonthStart.ToString("MM/yyyy")</span>
+    </div>
+</div>
+
+<partial name="_CalendarSummary" model="(Model.TotalScheduled, Model.TotalDone, Model.CompletionPercent)" />
+
+<div class="card">
+    <div class="month-weekdays">
+        @foreach (var w in weekdays)
+        {
+            <div class="month-wd">@w</div>
+        }
+    </div>
+    <div class="month-grid">
+        @foreach (var day in Model.Days)
+        {
+            <div class="month-cell @(day.InMonth ? "" : "out-month") @(day.IsToday ? "is-today" : "")">
+                <div class="mc-head">
+                    <a class="mc-date" asp-action="Timeline" asp-route-date="@day.Date.ToString("yyyy-MM-dd")" asp-route-employeeId="@emp" title="Xem lịch ngày @day.Date.ToString("dd/MM")">@day.Date.Day</a>
+                    @if (day.Total > 0)
+                    {
+                        <span class="mc-badge @(day.Done == day.Total ? "all-done" : "")">@day.Done/@day.Total</span>
+                    }
+                </div>
+                <div class="mc-tasks">
+                    @foreach (var t in day.Tasks.Take(3))
+                    {
+                        <a class="mc-chip prio-@Px(t) @(t.Status == TaskStatus.Done ? "done" : "")"
+                           asp-action="Details" asp-route-id="@t.Id" title="@t.ScheduledStart!.Value.ToString("HH:mm") @t.Title">
+                            <span class="mc-chip-time">@t.ScheduledStart!.Value.ToString("HH:mm")</span> @t.Title
+                        </a>
+                    }
+                    @if (day.Total > 3)
+                    {
+                        <span class="mc-more">+@(day.Total - 3) việc khác</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

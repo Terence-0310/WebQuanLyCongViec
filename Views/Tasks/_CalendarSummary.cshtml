@@ -1,0 +1,19 @@
+@model (int Total, int Done, int Percent)
+@* Thanh tổng hợp "đếm công": số việc đã xếp lịch, số hoàn thành và % hoàn thành trong kỳ. *@
+<div class="cal-summary">
+    <div class="cal-stat">
+        <span class="cal-stat-val">@Model.Total</span>
+        <span class="cal-stat-lbl">Việc đã lên lịch</span>
+    </div>
+    <div class="cal-stat">
+        <span class="cal-stat-val">@Model.Done</span>
+        <span class="cal-stat-lbl">Đã hoàn thành</span>
+    </div>
+    <div class="cal-stat grow">
+        <div class="cal-stat-top">
+            <span class="cal-stat-lbl">Tiến độ hoàn thành</span>
+            <span class="cal-stat-pct">@Model.Percent%</span>
+        </div>
+        <div class="cal-progress"><div class="cal-progress-bar" style="width:@Model.Percent%"></div></div>
+    </div>
+</div>

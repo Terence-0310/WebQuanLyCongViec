@@ -28,6 +28,16 @@ public class AccountController : Controller
         _userManager = userManager;
     }
 
+    // Request gửi từ modal (fetch) có header này -> trả JSON thay vì View.
+    private bool IsAjax =>
+        string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+    private string FirstError() =>
+        ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+            .FirstOrDefault(m => !string.IsNullOrEmpty(m)) ?? "Dữ liệu không hợp lệ.";
+
+    private JsonResult JsonError(string message) => Json(new { ok = false, error = message });
+
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
@@ -41,7 +51,8 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+            return IsAjax ? JsonError(FirstError()) : View(model);
 
         var user = await _userManager.FindByEmailAsync(model.Email.Trim());
         if (user is not null)
@@ -50,13 +61,16 @@ public class AccountController : Controller
                 user, model.Password, isPersistent: true, lockoutOnFailure: false);
             if (result.Succeeded)
             {
-                if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-                    return Redirect(model.ReturnUrl);
-                return RedirectToAction("Index", "Home");
+                var url = (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+                    ? model.ReturnUrl
+                    : Url.Action("Index", "Home")!;
+                return IsAjax ? Json(new { ok = true, redirect = url }) : Redirect(url);
             }
         }
 
-        ModelState.AddModelError(string.Empty, "Email hoặc mật khẩu không đúng.");
+        const string err = "Email hoặc mật khẩu không đúng.";
+        if (IsAjax) return JsonError(err);
+        ModelState.AddModelError(string.Empty, err);
         return View(model);
     }
 
@@ -73,17 +87,20 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(RegisterViewModel model)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid)
+            return IsAjax ? JsonError(FirstError()) : View(model);
 
         var (success, error, user) = await _auth.RegisterAsync(model);
         if (!success)
         {
+            if (IsAjax) return JsonError(error!);
             ModelState.AddModelError(string.Empty, error!);
             return View(model);
         }
 
         await _signInManager.SignInAsync(user!, isPersistent: true);
-        return RedirectToAction("Index", "Home");
+        var url = Url.Action("Index", "Home")!;
+        return IsAjax ? Json(new { ok = true, redirect = url }) : Redirect(url);
     }
 
     [HttpPost]

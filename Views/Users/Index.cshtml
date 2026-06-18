@@ -21,10 +21,16 @@
 
 @if (Model.TotalAdmins is int adminCount)
 {
-    <div class="flash flash-info">Toàn hệ thống hiện có <strong>@adminCount</strong> tài khoản Admin.</div>
+    <div class="callout callout-info">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Toàn hệ thống hiện có <strong>@adminCount</strong> tài khoản Admin.</span>
+    </div>
 }
 
-<h3 class="section-heading">Nhân viên công ty (@Model.CompanyUsers.Count)</h3>
+<div class="list-head">
+    <h3 class="section-heading mb-0">Nhân viên công ty</h3>
+    <span class="count-chip">@Model.CompanyUsers.Count</span>
+</div>
 @if (Model.CompanyUsers.Any())
 {
     <partial name="_UserTable" model="Model.CompanyUsers" />
@@ -36,7 +42,10 @@ else
 
 @if (Model.PersonalUsers.Any())
 {
-    <h3 class="section-heading mt-2">Tài khoản cá nhân (@Model.PersonalUsers.Count)</h3>
+    <div class="list-head mt-2">
+        <h3 class="section-heading mb-0">Tài khoản cá nhân</h3>
+        <span class="count-chip">@Model.PersonalUsers.Count</span>
+    </div>
     <p class="muted text-sm mb-1">Người tự đăng ký hoặc đăng nhập bằng Google — tự quản lý công việc cá nhân, không thuộc cơ cấu công ty.</p>
     <partial name="_UserTable" model="Model.PersonalUsers" />
 }

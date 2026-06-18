@@ -67,9 +67,15 @@ trông như sản phẩm thực tế.
   workspace tự gỡ khỏi các project bên trong.
 - **Page ghi chú:** CRUD, nội dung dạng văn bản đơn giản.
 - **Task:** CRUD, deadline, priority (Low/Medium/High), status (Todo/Doing/Done);
-  xem dạng **List**, **Kanban 3 cột** (đổi trạng thái bằng dropdown ngay trên thẻ)
-  và **Timeline** (lịch ngày: xếp / đổi / bỏ lịch và chỉnh thời lượng task bằng AJAX
-  qua `ScheduledStart` + `DurationMinutes`); nhãn **Overdue** cho task quá hạn.
+  xem dạng **List**, **Kanban 3 cột** (đổi trạng thái bằng dropdown ngay trên thẻ);
+  nhãn **Overdue** cho task quá hạn.
+- **Lịch (Ngày / Tuần / Tháng):** chuyển nhanh giữa 3 chế độ.
+  - *Ngày* — kéo / đổi / bỏ lịch và chỉnh thời lượng task bằng AJAX (`ScheduledStart`
+    + `DurationMinutes`).
+  - *Tuần* — lưới 7 ngày (từ Thứ 2), task xếp theo giờ trong từng ngày.
+  - *Tháng* — lưới 6 tuần để **theo dõi tiến độ / "đếm công"** cả dự án; mỗi ô ngày
+    hiện số việc và số hoàn thành, kèm thanh **% hoàn thành** tổng kỳ. Bấm ngày để mở
+    lịch ngày tương ứng. Cả 3 chế độ đều lọc được theo người (bộ chọn "Xem của").
 - **Giao việc đa phụ trách:** một task có thể giao cho **nhiều người cùng làm**
   (quan hệ nhiều-nhiều `TaskAssignee`), giao cho ai cũng được thông báo. Vì Timeline
   là **lịch riêng của từng người**, một task chung (1 khung giờ) hiển thị trên lịch
@@ -131,7 +137,7 @@ Cetee/
 ├── ViewComponents/         # NotificationBadge (đếm thông báo chưa đọc)
 ├── Views/                  # Razor views + layout sidebar
 │   ├── Account/ (Login, Register, ForgotPassword, VerifyOtp, ResetPassword)
-│   ├── Tasks/ (Index, Board, Timeline, Details, Create, Edit, _Form)
+│   ├── Tasks/ (Index, Board, Timeline, Week, Month, Details, Create, Edit, _Form, _CalendarSummary)
 │   ├── Users/ (Index, Create, Edit, _UserTable)
 │   ├── Workspaces/ (Index, Details, Create, Edit, _Form), Projects/ (… Details)
 │   └── Shared/ (_Layout, _Avatar, _EmployeePicker, Error, Components/)

@@ -141,6 +141,9 @@ public class UserListItemViewModel
     /// <summary>Người xem được cấp/bỏ quyền Admin cho người này (chỉ SuperAdmin).</summary>
     public bool CanToggleAdmin { get; set; }
 
+    /// <summary>Các vai trò có thể gán nhanh cho người này (rỗng nếu không có quyền đổi).</summary>
+    public List<SelectListItem> RoleChoices { get; set; } = new();
+
     public bool IsAdmin => RoleName == Roles.Admin;
     public bool IsSuperAdmin => RoleName == Roles.SuperAdmin;
 

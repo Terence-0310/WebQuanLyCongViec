@@ -20,6 +20,8 @@ public interface ITaskService
     Task<List<User>> GetProjectMembersAsync(int projectId);
 
     Task<TimelineViewModel> GetTimelineAsync(int userId, bool seeAll, DateTime date, IReadOnlyList<int>? assigneeFilter = null);
+    Task<WeekCalendarViewModel> GetWeekAsync(int userId, bool seeAll, DateTime date, IReadOnlyList<int>? assigneeFilter = null);
+    Task<MonthCalendarViewModel> GetMonthAsync(int userId, bool seeAll, DateTime date, IReadOnlyList<int>? assigneeFilter = null);
     Task<bool> ScheduleAsync(int id, bool changeStart, DateTime? start, int? duration, int userId, bool seeAll);
 }
 
@@ -110,6 +112,14 @@ public class TaskService : ITaskService
         // Chỉ chấp nhận người thực hiện là thành viên của project (đa phụ trách).
         var assigneeIds = await ValidAssigneesAsync(model.ProjectId, model.AssigneeIds);
 
+        // Mặc định: không chọn ai mà người tạo là thành viên project -> giao cho chính họ,
+        // để task hiện ngay trong danh sách / Kanban / Lịch của họ và xếp lịch được.
+        if (assigneeIds.Count == 0 &&
+            await _db.ProjectMembers.AnyAsync(m => m.ProjectId == model.ProjectId && m.UserId == userId))
+        {
+            assigneeIds.Add(userId);
+        }
+
         var task = new TaskItem
         {
             Title = model.Title.Trim(),
@@ -126,8 +136,8 @@ public class TaskService : ITaskService
 
         await _activity.LogAsync(userId, "Created", "Task", task.Id, $"Tạo task \"{task.Title}\"");
 
-        // Thông báo cho từng người được giao.
-        foreach (var uid in assigneeIds)
+        // Thông báo cho người được giao (trừ chính người tạo).
+        foreach (var uid in assigneeIds.Where(id => id != userId))
             await _notifications.CreateAsync(uid, $"Bạn được giao task: {task.Title}", task.Id);
 
         return task;
@@ -263,6 +273,79 @@ public class TaskService : ITaskService
             .ToListAsync();
 
         return new TimelineViewModel { Date = dayStart, Scheduled = scheduled, Unscheduled = unscheduled };
+    }
+
+    // Thứ Hai đầu tuần chứa ngày d (tuần bắt đầu từ Thứ Hai theo thói quen VN).
+    private static DateTime WeekStartOf(DateTime d)
+    {
+        int offset = ((int)d.DayOfWeek + 6) % 7; // Monday=0 ... Sunday=6
+        return d.Date.AddDays(-offset);
+    }
+
+    // Task đã xếp lịch trong khoảng [start, end), kèm project + người phụ trách.
+    private async Task<List<TaskItem>> ScheduledBetweenAsync(
+        int userId, bool seeAll, DateTime start, DateTime end, IReadOnlyList<int>? assigneeFilter)
+    {
+        var query = Accessible(userId, seeAll)
+            .Include(t => t.Project)
+            .Include(t => t.Assignees).ThenInclude(a => a.User)
+            .Where(t => t.ScheduledStart != null && t.ScheduledStart >= start && t.ScheduledStart < end);
+
+        if (assigneeFilter != null)
+            query = query.Where(t => t.Assignees.Any(a => assigneeFilter.Contains(a.UserId)));
+
+        return await query.OrderBy(t => t.ScheduledStart).ToListAsync();
+    }
+
+    public async Task<WeekCalendarViewModel> GetWeekAsync(int userId, bool seeAll, DateTime date, IReadOnlyList<int>? assigneeFilter = null)
+    {
+        var start = WeekStartOf(date);
+        var end = start.AddDays(7);
+        var tasks = await ScheduledBetweenAsync(userId, seeAll, start, end, assigneeFilter);
+
+        var days = Enumerable.Range(0, 7).Select(i =>
+        {
+            var day = start.AddDays(i);
+            return new CalendarDay
+            {
+                Date = day,
+                Tasks = tasks.Where(t => t.ScheduledStart!.Value.Date == day).ToList()
+            };
+        }).ToList();
+
+        return new WeekCalendarViewModel
+        {
+            WeekStart = start,
+            Days = days,
+            IsThisWeek = start == WeekStartOf(DateTime.Today)
+        };
+    }
+
+    public async Task<MonthCalendarViewModel> GetMonthAsync(int userId, bool seeAll, DateTime date, IReadOnlyList<int>? assigneeFilter = null)
+    {
+        var monthStart = new DateTime(date.Year, date.Month, 1);
+        var gridStart = WeekStartOf(monthStart);   // lùi về Thứ Hai để lấp đầy lưới
+        var gridEnd = gridStart.AddDays(42);        // 6 tuần × 7 ngày
+        var tasks = await ScheduledBetweenAsync(userId, seeAll, gridStart, gridEnd, assigneeFilter);
+
+        var days = Enumerable.Range(0, 42).Select(i =>
+        {
+            var day = gridStart.AddDays(i);
+            return new CalendarDay
+            {
+                Date = day,
+                InMonth = day.Month == monthStart.Month && day.Year == monthStart.Year,
+                Tasks = tasks.Where(t => t.ScheduledStart!.Value.Date == day).ToList()
+            };
+        }).ToList();
+
+        var today = DateTime.Today;
+        return new MonthCalendarViewModel
+        {
+            MonthStart = monthStart,
+            Days = days,
+            IsThisMonth = monthStart == new DateTime(today.Year, today.Month, 1)
+        };
     }
 
     public async Task<bool> ScheduleAsync(int id, bool changeStart, DateTime? start, int? duration, int userId, bool seeAll)

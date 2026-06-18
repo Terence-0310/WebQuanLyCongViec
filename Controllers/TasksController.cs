@@ -63,6 +63,26 @@ public class TasksController : BaseController
         return View(model);
     }
 
+    // GET /Tasks/Week -> lịch tuần (7 ngày, từ Thứ Hai)
+    public async Task<IActionResult> Week(DateTime? date, int? employeeId)
+    {
+        var day = (date ?? DateTime.Today).Date;
+        var scope = await _users.ResolveScopeAsync(CurrentUserId, CurrentRole, employeeId);
+        var model = await _tasks.GetWeekAsync(CurrentUserId, CanSeeAllData, day, scope.AssigneeFilter);
+        model.Scope = scope;
+        return View(model);
+    }
+
+    // GET /Tasks/Month -> lịch tháng (lưới 6 tuần) để theo dõi tiến độ hoàn thành
+    public async Task<IActionResult> Month(DateTime? date, int? employeeId)
+    {
+        var day = (date ?? DateTime.Today).Date;
+        var scope = await _users.ResolveScopeAsync(CurrentUserId, CurrentRole, employeeId);
+        var model = await _tasks.GetMonthAsync(CurrentUserId, CanSeeAllData, day, scope.AssigneeFilter);
+        model.Scope = scope;
+        return View(model);
+    }
+
     // POST /Tasks/Schedule -> xếp/đổi/bỏ lịch hoặc đổi thời lượng (gọi bằng AJAX từ timeline)
     [HttpPost]
     [ValidateAntiForgeryToken]

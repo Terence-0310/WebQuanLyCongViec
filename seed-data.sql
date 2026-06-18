@@ -246,6 +246,67 @@ JOIN (VALUES
 ) AS x(Title, UserId) ON t.Title = x.Title;
 
 -- =========================================================
+-- HOẠT ĐỘNG TRONG THÁNG (từ ngày 1 đến hôm nay) — phủ dữ liệu cho lịch Tuần/Tháng.
+-- Mỗi ngày vài việc đã xếp lịch; việc cũ phần lớn đã Hoàn thành để minh họa tiến độ
+-- "đếm công" tăng dần. ScheduledStart = (hôm nay - k ngày) + giờ trong ngày.
+-- =========================================================
+INSERT INTO Tasks (Title,Description,Priority,Status,DueDate,ScheduledStart,DurationMinutes,ProjectId,CreatedAt) VALUES
+ (N'[Web] Sửa lỗi hiển thị giỏ hàng',N'',1,2,DATEADD(day,-20,@today),DATEADD(minute,540,DATEADD(day,-20,@today)),60,@pWeb,DATEADD(day,-22,@now)),
+ (N'[Web] Tối ưu tốc độ tải trang',N'',1,2,DATEADD(day,-19,@today),DATEADD(minute,840,DATEADD(day,-19,@today)),60,@pWeb,DATEADD(day,-21,@now)),
+ (N'[Mobile] Tinh chỉnh splash screen',N'',0,2,DATEADD(day,-18,@today),DATEADD(minute,540,DATEADD(day,-18,@today)),45,@pMobile,DATEADD(day,-20,@now)),
+ (N'[ERP] Nhập dữ liệu kho mẫu',N'',1,2,DATEADD(day,-17,@today),DATEADD(minute,600,DATEADD(day,-17,@today)),90,@pErp,DATEADD(day,-19,@now)),
+ (N'[QA] Viết test đăng nhập',N'',1,2,DATEADD(day,-16,@today),DATEADD(minute,540,DATEADD(day,-16,@today)),60,@pAuto,DATEADD(day,-18,@now)),
+ (N'[Perf] Đo thời gian phản hồi API',N'',2,2,DATEADD(day,-15,@today),DATEADD(minute,900,DATEADD(day,-15,@today)),60,@pPerf,DATEADD(day,-17,@now)),
+ (N'[MKT] Soạn bài đăng tuần 1',N'',1,2,DATEADD(day,-14,@today),DATEADD(minute,540,DATEADD(day,-14,@today)),60,@pCampaign,DATEADD(day,-16,@now)),
+ (N'[Web] Thêm bộ lọc sản phẩm',N'',1,2,DATEADD(day,-13,@today),DATEADD(minute,780,DATEADD(day,-13,@today)),90,@pWeb,DATEADD(day,-15,@now)),
+ (N'[Mobile] Màn hình giỏ hàng',N'',1,2,DATEADD(day,-12,@today),DATEADD(minute,540,DATEADD(day,-12,@today)),60,@pMobile,DATEADD(day,-14,@now)),
+ (N'[ERP] Báo cáo nhập xuất tuần',N'',1,2,DATEADD(day,-11,@today),DATEADD(minute,960,DATEADD(day,-11,@today)),60,@pErp,DATEADD(day,-13,@now)),
+ (N'[QA] Test thanh toán VNPay',N'',2,2,DATEADD(day,-10,@today),DATEADD(minute,540,DATEADD(day,-10,@today)),90,@pAuto,DATEADD(day,-12,@now)),
+ (N'[MKT] Thiết kế banner tuần 2',N'',1,2,DATEADD(day,-9,@today),DATEADD(minute,840,DATEADD(day,-9,@today)),60,@pCampaign,DATEADD(day,-11,@now)),
+ (N'[Web] Trang chi tiết đơn hàng',N'',1,2,DATEADD(day,-8,@today),DATEADD(minute,540,DATEADD(day,-8,@today)),90,@pWeb,DATEADD(day,-10,@now)),
+ (N'[Mobile] Tích hợp đăng nhập Google',N'',2,1,DATEADD(day,-7,@today),DATEADD(minute,600,DATEADD(day,-7,@today)),90,@pMobile,DATEADD(day,-9,@now)),
+ (N'[Perf] Tối ưu truy vấn báo cáo',N'',2,1,DATEADD(day,-6,@today),DATEADD(minute,540,DATEADD(day,-6,@today)),60,@pPerf,DATEADD(day,-8,@now)),
+ (N'[QA] Test hồi quy luồng mua',N'',1,1,DATEADD(day,-5,@today),DATEADD(minute,840,DATEADD(day,-5,@today)),90,@pAuto,DATEADD(day,-7,@now)),
+ (N'[ERP] Màn hình cảnh báo tồn',N'',1,1,DATEADD(day,-4,@today),DATEADD(minute,540,DATEADD(day,-4,@today)),60,@pErp,DATEADD(day,-6,@now)),
+ (N'[MKT] Quay video sản phẩm',N'',1,1,DATEADD(day,-3,@today),DATEADD(minute,600,DATEADD(day,-3,@today)),120,@pCampaign,DATEADD(day,-5,@now)),
+ (N'[Web] Kiểm thử responsive mobile',N'',1,0,DATEADD(day,-2,@today),DATEADD(minute,540,DATEADD(day,-2,@today)),60,@pWeb,DATEADD(day,-4,@now)),
+ (N'[Mobile] Sửa lỗi đăng ký',N'',2,1,DATEADD(day,-1,@today),DATEADD(minute,900,DATEADD(day,-1,@today)),60,@pMobile,DATEADD(day,-3,@now)),
+ (N'[MKT] Lên lịch đăng tuần 3',N'',1,0,DATEADD(day,-1,@today),DATEADD(minute,540,DATEADD(day,-1,@today)),60,@pCampaign,DATEADD(day,-3,@now)),
+ (N'[Web] Họp review tính năng',N'',1,0,@today,DATEADD(minute,660,@today),60,@pWeb,DATEADD(day,-1,@now)),
+ (N'[QA] Tổng hợp báo cáo lỗi',N'',1,0,@today,DATEADD(minute,960,@today),60,@pAuto,DATEADD(day,-1,@now)),
+ (N'[Perf] Báo cáo hiệu năng cuối kỳ',N'',2,0,@today,DATEADD(minute,840,@today),90,@pPerf,DATEADD(day,-1,@now));
+
+INSERT INTO TaskAssignees (TaskItemId, UserId)
+SELECT t.Id, x.UserId
+FROM Tasks t
+JOIN (VALUES
+    (N'[Web] Sửa lỗi hiển thị giỏ hàng', @huy),
+    (N'[Web] Tối ưu tốc độ tải trang', @mai),
+    (N'[Mobile] Tinh chỉnh splash screen', @ducanh),
+    (N'[ERP] Nhập dữ liệu kho mẫu', @bao),
+    (N'[QA] Viết test đăng nhập', @nga),
+    (N'[Perf] Đo thời gian phản hồi API', @bao),
+    (N'[MKT] Soạn bài đăng tuần 1', @nhi),
+    (N'[Web] Thêm bộ lọc sản phẩm', @mai),
+    (N'[Mobile] Màn hình giỏ hàng', @huy),
+    (N'[ERP] Báo cáo nhập xuất tuần', @quan),
+    (N'[QA] Test thanh toán VNPay', @bao),
+    (N'[MKT] Thiết kế banner tuần 2', @kiet),
+    (N'[Web] Trang chi tiết đơn hàng', @ducanh),
+    (N'[Mobile] Tích hợp đăng nhập Google', @ducanh),
+    (N'[Perf] Tối ưu truy vấn báo cáo', @nga),
+    (N'[QA] Test hồi quy luồng mua', @nga),
+    (N'[ERP] Màn hình cảnh báo tồn', @bao),
+    (N'[MKT] Quay video sản phẩm', @nhi),
+    (N'[Web] Kiểm thử responsive mobile', @huy),
+    (N'[Mobile] Sửa lỗi đăng ký', @mai),
+    (N'[MKT] Lên lịch đăng tuần 3', @kiet),
+    (N'[Web] Họp review tính năng', @quan),
+    (N'[QA] Tổng hợp báo cáo lỗi', @bao),
+    (N'[Perf] Báo cáo hiệu năng cuối kỳ', @nga)
+) AS x(Title, UserId) ON t.Title = x.Title;
+
+-- =========================================================
 -- COMMENTS, NOTIFICATIONS, ACTIVITY LOGS (tham chiếu task theo tiêu đề)
 -- =========================================================
 DECLARE @tVnpay INT=(SELECT Id FROM Tasks WHERE Title=N'Tích hợp cổng thanh toán VNPay');

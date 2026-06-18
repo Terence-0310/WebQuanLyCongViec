@@ -1,0 +1,70 @@
+@model WeekCalendarViewModel
+@{
+    ViewData["Title"] = "Lịch tuần";
+    var emp = ViewContext.HttpContext.Request.Query["employeeId"].ToString();
+    var dIso = Model.WeekStart.ToString("yyyy-MM-dd");
+    string Px(TaskItem t) => t.Priority.ToString().ToLower();
+}
+
+@section TopbarAction {
+    <div class="page-actions">
+        <partial name="_EmployeePicker" model="Model.Scope" />
+        <a class="btn btn-secondary" asp-action="Index">Danh sách</a>
+        <a class="btn btn-primary" asp-action="Create">Tạo task</a>
+    </div>
+}
+
+<div class="cal-toolbar">
+    <div class="cal-tabs">
+        <a class="cal-tab" asp-action="Timeline" asp-route-date="@dIso" asp-route-employeeId="@emp">Ngày</a>
+        <a class="cal-tab active" asp-action="Week" asp-route-date="@dIso" asp-route-employeeId="@emp">Tuần</a>
+        <a class="cal-tab" asp-action="Month" asp-route-date="@dIso" asp-route-employeeId="@emp">Tháng</a>
+    </div>
+    <div class="date-nav">
+        <a class="btn btn-secondary btn-sm" asp-action="Week" asp-route-date="@Model.PrevWeek.ToString("yyyy-MM-dd")" asp-route-employeeId="@emp">‹ Tuần trước</a>
+        <a class="btn btn-secondary btn-sm" asp-action="Week" asp-route-date="@Model.NextWeek.ToString("yyyy-MM-dd")" asp-route-employeeId="@emp">Tuần sau ›</a>
+        @if (!Model.IsThisWeek)
+        {
+            <a class="btn btn-secondary btn-sm" asp-action="Week" asp-route-employeeId="@emp">Tuần này</a>
+        }
+        <span class="cal-range">@Model.WeekStart.ToString("dd/MM") – @Model.WeekEnd.ToString("dd/MM/yyyy")</span>
+    </div>
+</div>
+
+<partial name="_CalendarSummary" model="(Model.TotalScheduled, Model.TotalDone, Model.CompletionPercent)" />
+
+<div class="week-grid">
+    @foreach (var day in Model.Days)
+    {
+        <div class="week-col @(day.IsToday ? "is-today" : "")">
+            <div class="week-col-head">
+                <div>
+                    <span class="wd">@DisplayHelpers.Weekday(day.Date)</span>
+                    <span class="dm">@day.Date.ToString("dd/MM")</span>
+                </div>
+                @if (day.Total > 0)
+                {
+                    <span class="day-count" title="@day.Done/@day.Total hoàn thành">@day.Done/@day.Total</span>
+                }
+            </div>
+            <div class="week-col-body">
+                @if (day.Total == 0)
+                {
+                    <p class="muted text-sm cal-empty">—</p>
+                }
+                @foreach (var t in day.Tasks)
+                {
+                    <a class="cal-task prio-@Px(t) @(t.Status == TaskStatus.Done ? "done" : "")"
+                       asp-action="Details" asp-route-id="@t.Id" title="@t.Title">
+                        <span class="ct-time">@t.ScheduledStart!.Value.ToString("HH:mm")</span>
+                        <span class="ct-title">@t.Title</span>
+                        @if (t.AssignedUsers.Any())
+                        {
+                            <span class="ct-who">@string.Join(", ", t.AssignedUsers.Select(u => u.FullName))</span>
+                        }
+                    </a>
+                }
+            </div>
+        </div>
+    }
+</div>

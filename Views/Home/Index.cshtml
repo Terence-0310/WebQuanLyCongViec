@@ -1,0 +1,338 @@
+@{
+    ViewData["Title"] = "Cetee — Quản lý công việc nhóm";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cetee — Quản lý công việc nhóm, gọn gàng và rõ ràng</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="lp">
+    <!-- Thanh điều hướng -->
+    <header class="lp-nav">
+        <div class="lp-container lp-nav-inner">
+            <a class="lp-brand" href="/">
+                <span class="brand-logo">C</span> Cetee
+            </a>
+            <nav class="lp-nav-links">
+                <a href="#features">Tính năng</a>
+                <a href="#how">Cách hoạt động</a>
+                <a href="#why">Vì sao chọn Cetee</a>
+            </nav>
+            <div class="lp-nav-actions">
+                <a class="btn btn-secondary" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Đăng ký miễn phí</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="lp-hero">
+        <div class="lp-container lp-hero-grid">
+            <div class="lp-hero-copy">
+                <span class="lp-eyebrow">Quản lý công việc dự án</span>
+                <h1>Tổ chức, theo dõi và hoàn thành công việc nhóm — ở cùng một nơi.</h1>
+                <p>Cetee giúp đội ngũ của bạn sắp xếp công việc theo workspace, project và bảng Kanban;
+                    lên lịch theo ngày / tuần / tháng và nắm tiến độ hoàn thành trong vài cú nhấp.</p>
+                <div class="lp-hero-cta">
+                    <a class="btn btn-primary btn-lg" asp-controller="Account" asp-action="Register">Bắt đầu miễn phí →</a>
+                    <a class="btn btn-secondary btn-lg" asp-controller="Account" asp-action="Login">Tôi đã có tài khoản</a>
+                </div>
+                <div class="lp-trust">
+                    <span>✓ Phân quyền công ty 4 cấp</span>
+                    <span>✓ Đăng nhập Google</span>
+                    <span>✓ Quên mật khẩu qua email OTP</span>
+                </div>
+            </div>
+
+            <!-- Mockup sản phẩm (vẽ bằng CSS, mô phỏng bảng Kanban) -->
+            <div class="lp-hero-art" aria-hidden="true">
+                <div class="lp-mock">
+                    <div class="lp-mock-bar">
+                        <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+                        <span class="lp-mock-title">Website Thương mại điện tử · Kanban</span>
+                    </div>
+                    <div class="lp-mock-body">
+                        <div class="lp-col">
+                            <div class="lp-col-h">Cần làm <b>3</b></div>
+                            <div class="lp-mc"><span class="t high">Cao</span>Kiểm thử luồng đặt hàng</div>
+                            <div class="lp-mc"><span class="t low">Thấp</span>Cảnh báo hàng sắp hết</div>
+                            <div class="lp-mc"><span class="t med">TB</span>Màn hình chi tiết SP</div>
+                        </div>
+                        <div class="lp-col">
+                            <div class="lp-col-h">Đang làm <b>2</b></div>
+                            <div class="lp-mc"><span class="t high">Cao</span>Tích hợp VNPay
+                                <span class="lp-ppl"><i class="a c0"></i><i class="a c1"></i><i class="a c3"></i></span></div>
+                            <div class="lp-mc"><span class="t med">TB</span>API giỏ hàng</div>
+                        </div>
+                        <div class="lp-col">
+                            <div class="lp-col-h">Hoàn thành <b>2</b></div>
+                            <div class="lp-mc done"><span class="t done">Xong</span>Thiết kế trang chủ</div>
+                            <div class="lp-mc done"><span class="t done">Xong</span>Đăng nhập app</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tính năng -->
+    <section id="features" class="lp-section">
+        <div class="lp-container">
+            <div class="lp-section-head">
+                <h2>Mọi thứ để vận hành dự án trơn tru</h2>
+                <p>Từ giao việc đến theo dõi tiến độ — tất cả trong một công cụ gọn nhẹ.</p>
+            </div>
+            <div class="lp-features">
+                <div class="lp-feature">
+                    <div class="lp-fic ic-blue"><svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>
+                    <h3>Workspace &amp; Project</h3>
+                    <p>Tổ chức công việc theo không gian nhóm và dự án, có chủ sở hữu và thành viên rõ ràng.</p>
+                </div>
+                <div class="lp-feature">
+                    <div class="lp-fic ic-green"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/></svg></div>
+                    <h3>Bảng Kanban</h3>
+                    <p>Kéo–thả công việc qua 3 cột Cần làm / Đang làm / Hoàn thành để cập nhật tiến độ tức thì.</p>
+                </div>
+                <div class="lp-feature">
+                    <div class="lp-fic ic-amber"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                    <h3>Lịch Ngày / Tuần / Tháng</h3>
+                    <p>Xếp lịch công việc và theo dõi tiến độ hoàn thành cả dự án theo từng kỳ.</p>
+                </div>
+                <div class="lp-feature">
+                    <div class="lp-fic ic-blue"><svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+                    <h3>Phân quyền công ty</h3>
+                    <p>4 cấp Super Admin → Admin → Manager → User; mỗi cấp chỉ quản lý đúng phạm vi của mình.</p>
+                </div>
+                <div class="lp-feature">
+                    <div class="lp-fic ic-green"><svg class="icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+                    <h3>Giao việc đa phụ trách</h3>
+                    <p>Một công việc có thể giao cho nhiều người cùng làm; ai cũng nhận được thông báo.</p>
+                </div>
+                <div class="lp-feature">
+                    <div class="lp-fic ic-red"><svg class="icon" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+                    <h3>Thông báo &amp; bảo mật</h3>
+                    <p>Thông báo trong ứng dụng, đăng nhập Google và quên mật khẩu qua mã OTP gửi email.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cách hoạt động -->
+    <section id="how" class="lp-section lp-section-alt">
+        <div class="lp-container">
+            <div class="lp-section-head">
+                <h2>Bắt đầu trong 3 bước</h2>
+                <p>Không cần cài đặt — đăng ký và dùng ngay trên trình duyệt.</p>
+            </div>
+            <div class="lp-steps">
+                <div class="lp-step">
+                    <div class="lp-step-no">1</div>
+                    <h3>Tạo tài khoản</h3>
+                    <p>Đăng ký bằng email hoặc Google chỉ trong vài giây.</p>
+                </div>
+                <div class="lp-step">
+                    <div class="lp-step-no">2</div>
+                    <h3>Lập workspace &amp; project</h3>
+                    <p>Tạo không gian làm việc, thêm thành viên và mở các project.</p>
+                </div>
+                <div class="lp-step">
+                    <div class="lp-step-no">3</div>
+                    <h3>Giao việc &amp; theo dõi</h3>
+                    <p>Thêm task, kéo–thả trên Kanban và xem tiến độ trên lịch.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vì sao -->
+    <section id="why" class="lp-section">
+        <div class="lp-container lp-why">
+            <div>
+                <h2>Gọn gàng cho cá nhân, đủ mạnh cho công ty</h2>
+                <p>Người dùng cá nhân có không gian riêng tối giản; doanh nghiệp có phân cấp,
+                    quản lý thành viên và báo cáo tiến độ — tất cả trong cùng một nền tảng.</p>
+                <a class="btn btn-primary btn-lg" asp-controller="Account" asp-action="Register">Dùng thử miễn phí</a>
+            </div>
+            <div class="lp-why-stats">
+                <div class="lp-stat"><span class="n">4</span><span class="l">cấp phân quyền</span></div>
+                <div class="lp-stat"><span class="n">3</span><span class="l">chế độ lịch</span></div>
+                <div class="lp-stat"><span class="n">∞</span><span class="l">project &amp; task</span></div>
+                <div class="lp-stat"><span class="n">100%</span><span class="l">trên trình duyệt</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="lp-cta">
+        <div class="lp-container lp-cta-inner">
+            <h2>Sẵn sàng tổ chức công việc tốt hơn?</h2>
+            <p>Tạo tài khoản miễn phí và mời cả nhóm cùng tham gia ngay hôm nay.</p>
+            <div class="lp-hero-cta">
+                <a class="btn btn-lg lp-btn-light" asp-controller="Account" asp-action="Register">Đăng ký miễn phí</a>
+                <a class="btn btn-lg lp-btn-ghost" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="lp-footer">
+        <div class="lp-container lp-footer-inner">
+            <div class="lp-brand"><span class="brand-logo">C</span> Cetee</div>
+            <p>© @DateTime.Now.Year Cetee — Đồ án Quản lý công việc. Xây dựng bằng ASP.NET Core MVC.</p>
+        </div>
+    </footer>
+
+    @{
+        // SVG con mắt (hiện/ẩn mật khẩu)
+        var eyeSvg = "<svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\"><path d=\"M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg>";
+    }
+
+    <!-- Modal ĐĂNG NHẬP -->
+    <div class="lp-modal" id="loginModal" hidden>
+        <div class="lp-modal-backdrop" data-close></div>
+        <div class="lp-modal-card" role="dialog" aria-modal="true" aria-label="Đăng nhập">
+            <button type="button" class="lp-modal-x" data-close aria-label="Đóng">&times;</button>
+            <h2 class="lp-modal-title">Đăng nhập</h2>
+            <p class="lp-modal-sub">Đăng nhập để quản lý công việc của bạn</p>
+            <div class="lp-modal-err" id="loginErr" hidden></div>
+            <form id="loginForm" method="post" asp-controller="Account" asp-action="Login">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input class="form-control" name="Email" type="email" required placeholder="Nhập email của bạn" />
+                </div>
+                <div class="form-group">
+                    <div class="lp-label-row">
+                        <label class="form-label">Mật khẩu</label>
+                        <a class="lp-link" asp-controller="Account" asp-action="ForgotPassword">Quên mật khẩu?</a>
+                    </div>
+                    <div class="lp-pass">
+                        <input class="form-control" name="Password" type="password" required placeholder="Nhập mật khẩu" />
+                        <button type="button" class="lp-eye" data-eye>@Html.Raw(eyeSvg)</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg">Đăng nhập</button>
+            </form>
+            <div class="auth-divider"><span>Hoặc đăng nhập bằng</span></div>
+            <a class="btn btn-google btn-block" asp-controller="Account" asp-action="ExternalLogin">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.3 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-2.7-.4-3.9H24v7.4h12.7c-.3 2.1-1.6 5.2-4.6 7.3l7.1 5.5c4.3-3.9 6.9-9.7 6.9-16.3z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.8-6.1C1 16.5 0 20.1 0 24s1 7.5 2.6 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.6l-7.1-5.5c-2 1.4-4.6 2.3-8.1 2.3-6.3 0-11.7-3.8-13.6-9.3l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+                Tiếp tục với Google
+            </a>
+            <p class="lp-modal-switch">Chưa có tài khoản? <a href="#" data-modal="register">Đăng ký ngay</a></p>
+        </div>
+    </div>
+
+    <!-- Modal ĐĂNG KÝ -->
+    <div class="lp-modal" id="registerModal" hidden>
+        <div class="lp-modal-backdrop" data-close></div>
+        <div class="lp-modal-card" role="dialog" aria-modal="true" aria-label="Đăng ký">
+            <button type="button" class="lp-modal-x" data-close aria-label="Đóng">&times;</button>
+            <h2 class="lp-modal-title">Đăng ký</h2>
+            <p class="lp-modal-sub">Tạo tài khoản miễn phí để bắt đầu</p>
+            <div class="lp-modal-err" id="registerErr" hidden></div>
+            <form id="registerForm" method="post" asp-controller="Account" asp-action="Register">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label class="form-label">Họ và tên</label>
+                    <input class="form-control" name="FullName" required placeholder="Nhập họ tên hiển thị" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input class="form-control" name="Email" type="email" required placeholder="Nhập email của bạn" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu</label>
+                    <div class="lp-pass">
+                        <input class="form-control" name="Password" type="password" required placeholder="Tối thiểu 6 ký tự" />
+                        <button type="button" class="lp-eye" data-eye>@Html.Raw(eyeSvg)</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Xác nhận mật khẩu</label>
+                    <div class="lp-pass">
+                        <input class="form-control" name="ConfirmPassword" type="password" required placeholder="Nhập lại mật khẩu" />
+                        <button type="button" class="lp-eye" data-eye>@Html.Raw(eyeSvg)</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg">Đăng ký ngay</button>
+            </form>
+            <div class="auth-divider"><span>Hoặc đăng ký bằng</span></div>
+            <a class="btn btn-google btn-block" asp-controller="Account" asp-action="ExternalLogin">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.3 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-2.7-.4-3.9H24v7.4h12.7c-.3 2.1-1.6 5.2-4.6 7.3l7.1 5.5c4.3-3.9 6.9-9.7 6.9-16.3z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.8-6.1C1 16.5 0 20.1 0 24s1 7.5 2.6 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.6l-7.1-5.5c-2 1.4-4.6 2.3-8.1 2.3-6.3 0-11.7-3.8-13.6-9.3l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+                Tiếp tục với Google
+            </a>
+            <p class="lp-modal-switch">Đã có tài khoản? <a href="#" data-modal="login">Đăng nhập</a></p>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const body = document.body;
+            function closeAll() {
+                document.querySelectorAll('.lp-modal').forEach(m => m.hidden = true);
+                body.style.overflow = '';
+            }
+            function open(name) {
+                closeAll();
+                const m = document.getElementById(name + 'Modal');
+                if (!m) return;
+                m.hidden = false;
+                body.style.overflow = 'hidden';
+                const f = m.querySelector('input'); if (f) setTimeout(() => f.focus(), 30);
+            }
+
+            // Biến các liên kết Đăng nhập / Đăng ký trên trang thành nút mở modal (vẫn còn trang riêng nếu tắt JS).
+            document.querySelectorAll('a[href="/Account/Login"]').forEach(a =>
+                a.addEventListener('click', e => { e.preventDefault(); open('login'); }));
+            document.querySelectorAll('a[href="/Account/Register"]').forEach(a =>
+                a.addEventListener('click', e => { e.preventDefault(); open('register'); }));
+            document.querySelectorAll('[data-modal]').forEach(el =>
+                el.addEventListener('click', e => { e.preventDefault(); open(el.dataset.modal); }));
+            document.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', closeAll));
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+
+            // Hiện/ẩn mật khẩu
+            document.querySelectorAll('[data-eye]').forEach(btn => btn.addEventListener('click', () => {
+                const i = btn.parentElement.querySelector('input');
+                i.type = i.type === 'password' ? 'text' : 'password';
+                btn.classList.toggle('on');
+            }));
+
+            // Gửi form bằng AJAX để báo lỗi ngay trong modal (không rời trang)
+            function wire(formId, errId) {
+                const form = document.getElementById(formId);
+                const err = document.getElementById(errId);
+                if (!form) return;
+                form.addEventListener('submit', async e => {
+                    e.preventDefault();
+                    err.hidden = true;
+                    const btn = form.querySelector('button[type=submit]');
+                    const label = btn.textContent; btn.disabled = true; btn.textContent = 'Đang xử lý…';
+                    try {
+                        const res = await fetch(form.action, {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: new URLSearchParams(new FormData(form))
+                        });
+                        const data = await res.json();
+                        if (data.ok) { window.location = data.redirect || '/'; return; }
+                        err.textContent = data.error || 'Có lỗi xảy ra. Vui lòng thử lại.';
+                        err.hidden = false;
+                    } catch (_) {
+                        err.textContent = 'Không kết nối được máy chủ. Vui lòng thử lại.';
+                        err.hidden = false;
+                    }
+                    btn.disabled = false; btn.textContent = label;
+                });
+            }
+            wire('loginForm', 'loginErr');
+            wire('registerForm', 'registerErr');
+        })();
+    </script>
+</body>
+</html>

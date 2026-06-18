@@ -74,6 +74,16 @@
     <div class="sub">Lịch trình trong ngày của bạn. Kéo khối để đổi giờ (mốc 30 phút); kéo mép dưới để đổi thời lượng.</div>
 </div>
 
+@{
+    var empId = ViewContext.HttpContext.Request.Query["employeeId"].ToString();
+    var curIso = Model.Date.ToString("yyyy-MM-dd");
+}
+<div class="cal-tabs mb-2">
+    <a class="cal-tab active" asp-action="Timeline" asp-route-date="@curIso" asp-route-employeeId="@empId">Ngày</a>
+    <a class="cal-tab" asp-action="Week" asp-route-date="@curIso" asp-route-employeeId="@empId">Tuần</a>
+    <a class="cal-tab" asp-action="Month" asp-route-date="@curIso" asp-route-employeeId="@empId">Tháng</a>
+</div>
+
 <div class="card mb-2">
     <div class="card-body" style="display:flex; align-items:center; justify-content:space-between;">
         <div class="date-nav">
@@ -370,9 +380,14 @@
             if (savedY !== null) {
                 sessionStorage.removeItem('cal-scrollY');
                 window.scrollTo(0, parseInt(savedY));
-            } else if (document.getElementById('nowline')) {
-                // Lần mở mới: đưa vạch "bây giờ" vào tầm nhìn.
-                document.getElementById('nowline').scrollIntoView({ block: 'center' });
+            } else {
+                // Lần mở mới: chỉ cuộn BÊN TRONG khung lịch tới vạch "bây giờ",
+                // không cuộn cả trang (tránh trang bị nhảy xuống khi vừa mở Lịch).
+                const scroller = document.querySelector('.cal-scroll');
+                const now = document.getElementById('nowline');
+                if (scroller && now) {
+                    scroller.scrollTop = Math.max(0, now.offsetTop - scroller.clientHeight / 2);
+                }
             }
         })();
     </script>

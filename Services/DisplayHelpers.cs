@@ -64,6 +64,18 @@ public static class DisplayHelpers
         _ => "tag-low"
     };
 
+    /// <summary>Tên thứ trong tuần bằng tiếng Việt (Thứ 2 … Chủ nhật).</summary>
+    public static string Weekday(DateTime d) => d.DayOfWeek switch
+    {
+        DayOfWeek.Monday => "Thứ 2",
+        DayOfWeek.Tuesday => "Thứ 3",
+        DayOfWeek.Wednesday => "Thứ 4",
+        DayOfWeek.Thursday => "Thứ 5",
+        DayOfWeek.Friday => "Thứ 6",
+        DayOfWeek.Saturday => "Thứ 7",
+        _ => "Chủ nhật"
+    };
+
     /// <summary>Lấy 2 ký tự đầu của tên để hiển thị avatar dạng chữ cái.</summary>
     public static string Initials(string? fullName)
     {

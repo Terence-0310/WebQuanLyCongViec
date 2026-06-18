@@ -2,72 +2,84 @@
 
 <div class="card">
     <div class="table-wrap">
-        <table class="table">
+        <table class="table users-table">
             <thead>
                 <tr>
                     <th>Người dùng</th>
-                    <th>Email</th>
-                    <th>Loại</th>
                     <th>Vai trò</th>
                     <th>Cấp trên</th>
                     <th>Ngày tạo</th>
-                    <th>Dữ liệu</th>
+                    <th>Hoạt động</th>
                     <th class="text-right">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var u in Model)
                 {
+                    var roleCss = u.RoleName switch
+                    {
+                        Roles.SuperAdmin => "tag-high",
+                        Roles.Admin => "tag-doing",
+                        Roles.Manager => "tag-medium",
+                        _ => "tag-todo"
+                    };
                     <tr>
                         <td>
                             <div class="user-cell">
                                 <partial name="_Avatar" model="@u.FullName" />
-                                <span>@u.FullName @if (u.IsSelf) { <span class="muted text-sm">(bạn)</span> }</span>
+                                <div class="user-id">
+                                    <span class="user-name">@u.FullName @if (u.IsSelf) { <span class="self-tag">Bạn</span> }</span>
+                                    <span class="user-email">@u.Email</span>
+                                </div>
                             </div>
                         </td>
-                        <td class="muted">@u.Email</td>
-                        <td><span class="tag @u.AccountType.CssClass() plain">@u.AccountType.Label()</span></td>
-                        <td>
-                            @{
-                                var roleCss = u.RoleName switch
-                                {
-                                    Roles.SuperAdmin => "tag-high",
-                                    Roles.Admin => "tag-doing",
-                                    Roles.Manager => "tag-medium",
-                                    _ => "tag-todo"
-                                };
-                            }
-                            <span class="tag @roleCss plain">@u.RoleLabel</span>
-                        </td>
+                        <td><span class="tag @roleCss plain">@u.RoleLabel</span></td>
                         <td class="muted text-sm">@(u.ManagerName ?? "—")</td>
                         <td class="muted text-sm">@u.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
-                        <td class="muted text-sm">@u.OwnedWorkspaceCount workspace • @u.AssignedTaskCount task</td>
-                        <td class="text-right">
-                            <div class="form-actions justify-end">
-                                @if (u.CanEdit)
-                                {
-                                    <a class="btn btn-secondary btn-sm" asp-action="Edit" asp-route-id="@u.Id">Sửa</a>
-                                }
-                                @if (u.CanToggleAdmin)
-                                {
-                                    <form class="inline-form" asp-action="ChangeRole" method="post">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@u.Id" />
-                                        <input type="hidden" name="role" value="@(u.IsAdmin ? Roles.User : Roles.Admin)" />
-                                        <button type="submit" class="btn @(u.IsAdmin ? "btn-secondary" : "btn-primary") btn-sm">
-                                            @(u.IsAdmin ? "Bỏ quyền Admin" : "Cấp quyền Admin")
-                                        </button>
-                                    </form>
-                                }
-                                @if (u.CanDelete)
-                                {
-                                    <form class="inline-form" asp-action="Delete" method="post"
-                                          onsubmit="return confirm('Xóa người dùng @u.FullName? Các workspace họ sở hữu (@u.OwnedWorkspaceCount) và toàn bộ dữ liệu bên trong sẽ bị xóa theo.');">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@u.Id" />
-                                        <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
-                                    </form>
-                                }
+                        <td>
+                            <div class="mini-stats">
+                                <span class="mini-stat"><b>@u.OwnedWorkspaceCount</b> workspace</span>
+                                <span class="mini-stat"><b>@u.AssignedTaskCount</b> task</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="row-actions">
+                                <span class="ra-edit">
+                                    @if (u.CanEdit)
+                                    {
+                                        <a class="btn btn-ghost btn-sm" asp-action="Edit" asp-route-id="@u.Id" title="Sửa người dùng">
+                                            <svg class="icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                            Sửa
+                                        </a>
+                                    }
+                                </span>
+                                <span class="ra-role">
+                                    @if (u.CanToggleAdmin)
+                                    {
+                                        <form class="inline-form" asp-action="ChangeRole" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@u.Id" />
+                                            <select name="role" class="form-control form-control-sm role-select"
+                                                    data-current="@u.RoleName"
+                                                    onchange="if(confirm('Đổi vai trò người dùng này?')){this.form.submit();}else{this.value=this.dataset.current;}"
+                                                    asp-items="u.RoleChoices">
+                                            </select>
+                                        </form>
+                                    }
+                                </span>
+                                <span class="ra-del">
+                                    @if (u.CanDelete)
+                                    {
+                                        <form class="inline-form" asp-action="Delete" method="post"
+                                              onsubmit="return confirm('Xóa người dùng @u.FullName? Các workspace họ sở hữu (@u.OwnedWorkspaceCount) và toàn bộ dữ liệu bên trong sẽ bị xóa theo.');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@u.Id" />
+                                            <button type="submit" class="btn btn-ghost-danger btn-sm" title="Xóa người dùng">
+                                                <svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                            </button>
+                                        </form>
+                                    }
+                                </span>
                             </div>
                         </td>
                     </tr>

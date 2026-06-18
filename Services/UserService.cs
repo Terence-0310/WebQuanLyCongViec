@@ -142,7 +142,13 @@ public class UserService : IUserService
                 IsSelf = u.Id == viewerId,
                 CanEdit = CanManage(viewerId, viewerRole, u) || u.Id == viewerId,
                 CanDelete = CanManage(viewerId, viewerRole, u),
-                CanToggleAdmin = viewerRole == Roles.SuperAdmin && u.Id != viewerId && u.Role.Name != Roles.SuperAdmin
+                CanToggleAdmin = viewerRole == Roles.SuperAdmin && u.Id != viewerId && u.Role.Name != Roles.SuperAdmin,
+                // Nhãn ngắn (Admin/Manager/User) cho ô chọn gọn, không bị tràn.
+                RoleChoices = (viewerRole == Roles.SuperAdmin && u.Id != viewerId && u.Role.Name != Roles.SuperAdmin)
+                    ? Roles.AssignableBy(viewerRole)
+                        .Select(r => new SelectListItem(r, r, r == u.Role.Name))
+                        .ToList()
+                    : new List<SelectListItem>()
             })
             .ToList();
 

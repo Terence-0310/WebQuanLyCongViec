@@ -7,14 +7,14 @@ namespace Cetee.Controllers;
 
 public class HomeController : Controller
 {
-    // Trang gốc: điều hướng theo trạng thái và vai trò.
-    //  - Chưa đăng nhập            -> Login.
+    // Trang gốc:
+    //  - Chưa đăng nhập            -> Landing page giới thiệu sản phẩm (cho khách xem trước).
     //  - SuperAdmin / Admin        -> Dashboard (chỉ hai vai trò này được xem).
     //  - Manager / User (& độc lập) -> Workspaces (khu làm việc của họ).
     public IActionResult Index()
     {
         if (User.Identity?.IsAuthenticated != true)
-            return RedirectToAction("Login", "Account");
+            return View(); // Landing page công khai.
 
         var role = User.FindFirstValue(ClaimTypes.Role);
         return Roles.CanAccessDashboard(role)
