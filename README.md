@@ -19,22 +19,48 @@ trông như sản phẩm thực tế.
 | Mật khẩu | Băm PBKDF2 (SHA-256, 100k vòng, salt ngẫu nhiên) |
 | Giao diện | Razor Views + CSS thuần (một file `site.css`) |
 
-## 3. Chức năng chính
-
-- **Authentication:** đăng ký, đăng nhập, đăng xuất; phân quyền **User / Admin**.
-- **Workspace:** tạo / sửa / xóa / danh sách.
-- **Project:** CRUD + thanh tiến độ theo % task hoàn thành.
-- **Page ghi chú:** CRUD, nội dung dạng văn bản đơn giản.
-- **Task:** CRUD, giao việc, deadline, priority (Low/Medium/High), status
-  (Todo/Doing/Done); xem dạng **List** và **Kanban 3 cột** (đổi trạng thái bằng
-  dropdown ngay trên thẻ), nhãn **Overdue** cho task quá hạn.
-- **Comment:** bình luận trong task, hiển thị theo thời gian.
-- **Notification:** tự tạo khi user được giao task; đánh dấu đã đọc; badge số chưa đọc.
-- **Activity Log:** ghi nhật ký khi tạo project, tạo/sửa task, đổi trạng thái, bình luận.
-- **Dashboard:** tổng workspace / project / task, số task Todo/Doing/Done, task quá
-  hạn, tỷ lệ hoàn thành, project gần đây, task sắp đến hạn, hoạt động gần đây.
-- **Phân quyền dữ liệu:** user chỉ thấy workspace/project/task mình là thành viên;
-  **Admin xem toàn bộ**.
+3. Chức năng chính của hệ thống
+Hệ thống được thiết kế theo hướng module hóa, bao phủ đầy đủ vòng đời quản lý công việc từ xác thực người dùng → tổ chức không gian làm việc → điều phối task → cộng tác → giám sát hiệu suất. Dưới đây là các nhóm chức năng cốt lõi:
+3.1. Xác thực và phân quyền (Authentication & Authorization)
+Đăng ký / Đăng nhập / Đăng xuất với cơ chế bảo mật tiêu chuẩn.
+Phân vai người dùng rõ ràng:
+User: thao tác trong phạm vi workspace/project được cấp quyền.
+Admin: toàn quyền quản trị, có khả năng quan sát và can thiệp vào toàn bộ dữ liệu hệ thống.
+3.2. Quản lý không gian làm việc & dự án
+Workspace (Không gian làm việc): hỗ trợ đầy đủ CRUD (Tạo – Xem – Sửa – Xóa) và liệt kê theo danh sách, giúp tổ chức công việc theo nhóm hoặc theo lĩnh vực.
+Project (Dự án):
+CRUD đầy đủ.
+Tự động tính thanh tiến độ (%) dựa trên tỷ lệ task đã hoàn thành, giúp quản lý nắm bắt tiến độ tổng thể theo thời gian thực.
+3.3. Quản lý công việc (Task Management) – Trọng tâm
+a) Ghi chú (Page)
+CRUD các trang ghi chú với nội dung văn bản đơn giản, phục vụ tài liệu hóa ý tưởng, biên bản cuộc họp, tài liệu dự án.
+b) Task (Công việc)
+CRUD task với các thuộc tính nghiệp vụ phong phú:
+Giao việc (assignee), deadline, độ ưu tiên (Low / Medium / High).
+Trạng thái (Status): Todo → Doing → Done.
+Hai chế độ hiển thị:
+📋 List View: dạng danh sách truyền thống, dễ lọc và tìm kiếm.
+🗂️ Kanban Board 3 cột: kéo thả / chuyển trạng thái nhanh qua dropdown ngay trên thẻ task.
+Tự động gắn nhãn 🔴 Overdue cho các task đã quá hạn, giúp nhận diện rủi ro tức thì.
+c) Comment (Bình luận)
+Thảo luận trực tiếp trong từng task, hiển thị theo trình tự thời gian, hỗ trợ trao đổi ngữ cảnh ngay tại nơi công việc diễn ra.
+3.4. Thông báo & Nhật ký hoạt động
+Notification:
+Tự động phát sinh khi người dùng được giao task mới.
+Hỗ trợ đánh dấu đã đọc và hiển thị badge số lượng chưa đọc trên giao diện.
+Activity Log:
+Ghi lại toàn bộ sự kiện quan trọng: tạo project, tạo/sửa task, chuyển trạng thái, thêm bình luận…
+Phục vụ truy vết, kiểm toán và minh bạch hóa quá trình làm việc nhóm.
+3.5. Dashboard – Tổng quan điều hành
+Cung cấp cái nhìn toàn cảnh dành cho quản lý và cá nhân, bao gồm:
+📊 Thống kê tổng hợp: số lượng workspace / project / task.
+📈 Phân bố task theo trạng thái Todo / Doing / Done.
+⚠️ Cảnh báo: số task quá hạn, task sắp đến deadline.
+✅ Tỷ lệ hoàn thành công việc chung.
+🕘 Widget tiện ích: project gần đây, hoạt động gần đây, giúp người dùng quay lại ngữ cảnh làm việc nhanh chóng.
+3.6. Phân quyền và cô lập dữ liệu (Data Isolation)
+User chỉ nhìn thấy và thao tác trên workspace / project / task mà mình là thành viên → đảm bảo tính riêng tư và bảo mật thông tin.
+Admin có quyền xem và quản trị toàn bộ dữ liệu trên hệ thống, phục vụ vai trò giám sát tổng thể.
 
 ## 4. Cấu trúc thư mục
 
@@ -168,16 +194,34 @@ bằng tài khoản demo ở mục 8.
 
 ## 10. Ghi chú dành cho báo cáo đồ án
 
-- **Điểm nhấn kiến trúc:** tách 3 tầng rõ ràng (Controller → Service → Data),
-  Controller mỏng, logic tập trung ở Service — dễ trình bày và dễ chấm.
-- **Bảo mật:** mật khẩu băm PBKDF2 (không lưu plain text); `[Authorize]` cho mọi
-  controller cần đăng nhập; lọc dữ liệu theo quyền thành viên, Admin xem toàn bộ.
-- **Validation:** Data Annotations trên ViewModel (title bắt buộc, comment không
-  rỗng, email hợp lệ…) + kiểm tra nghiệp vụ (deadline không được ở quá khứ khi
-  tạo task mới, project phải thuộc workspace, page phải thuộc project).
-- **Nhật ký hoạt động (ActivityLog):** minh họa khả năng theo dõi thao tác người
-  dùng — điểm cộng khi báo cáo.
-- **Phạm vi có chủ đích:** không làm realtime, drag-drop, block editor, chat hay
-  upload file để tập trung hoàn thiện CRUD, UI, database và phân quyền.
-- **Gợi ý slide:** sơ đồ ERD (mục 5), sơ đồ luồng MVC (mục 4), ảnh chụp Dashboard,
-  Kanban và trang chi tiết Project/Task.
+### Kiến trúc hệ thống
+
+Hệ thống được xây dựng theo mô hình MVC và chia thành ba tầng chính gồm Controller, Service và Data. Controller chỉ tiếp nhận yêu cầu từ người dùng và điều hướng xử lý, trong khi các nghiệp vụ và truy vấn dữ liệu được đặt trong Service. Cách tổ chức này giúp mã nguồn dễ theo dõi, giảm sự phụ thuộc giữa các thành phần và thuận tiện khi bảo trì hoặc mở rộng chức năng sau này.
+
+### Bảo mật và phân quyền
+
+Người dùng phải đăng nhập để sử dụng các chức năng của hệ thống. Mật khẩu không được lưu trực tiếp trong cơ sở dữ liệu mà được băm bằng thuật toán PBKDF2 kết hợp với salt ngẫu nhiên nhằm tăng tính an toàn. Ngoài ra, hệ thống áp dụng phân quyền theo vai trò, trong đó Admin có quyền quản lý toàn bộ dữ liệu còn User chỉ được truy cập các workspace và project mà mình tham gia.
+
+### Kiểm tra dữ liệu đầu vào
+
+Các biểu mẫu trong hệ thống đều được kiểm tra dữ liệu trước khi lưu xuống cơ sở dữ liệu. Những trường bắt buộc như tiêu đề, email hoặc nội dung bình luận được kiểm tra bằng Data Annotations. Bên cạnh đó, hệ thống còn thực hiện một số kiểm tra nghiệp vụ như không cho phép tạo công việc với hạn hoàn thành nằm trong quá khứ hoặc tạo dữ liệu không thuộc phạm vi của dự án tương ứng.
+
+### Nhật ký hoạt động
+
+Mọi thao tác quan trọng như tạo dự án, tạo công việc, thay đổi trạng thái công việc hoặc thêm bình luận đều được ghi nhận vào bảng ActivityLog. Chức năng này giúp theo dõi lịch sử hoạt động của người dùng và hỗ trợ việc quản lý hệ thống.
+
+### Phạm vi thực hiện
+
+Trong phạm vi đồ án, nhóm tập trung hoàn thiện các chức năng cốt lõi như quản lý dự án, quản lý công việc, ghi chú, thông báo, phân quyền và thống kê dữ liệu. Một số chức năng nâng cao như kéo thả Kanban, cập nhật thời gian thực, trò chuyện trực tuyến hoặc tải tệp lên hệ thống chưa được triển khai để đảm bảo hoàn thành tốt các yêu cầu chính của đề tài.
+
+### Nội dung nên trình bày trên slide
+
+Khi báo cáo, nhóm tập trung trình bày các nội dung chính gồm:
+
+* Sơ đồ kiến trúc MVC của hệ thống.
+* Sơ đồ cơ sở dữ liệu (ERD).
+* Giao diện Dashboard thống kê.
+* Giao diện quản lý Project và Task.
+* Bảng Kanban theo dõi tiến độ công việc.
+* Chức năng phân quyền và thông báo.
+* Nhật ký hoạt động của người dùng.
