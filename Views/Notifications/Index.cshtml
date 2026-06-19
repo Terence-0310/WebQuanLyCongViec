@@ -1,0 +1,56 @@
+@model IEnumerable<Notification>
+@{
+    ViewData["Title"] = "Thông báo";
+    var hasUnread = Model.Any(n => !n.IsRead);
+}
+
+@section TopbarAction {
+    @if (hasUnread)
+    {
+        <form asp-action="MarkAllAsRead" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-secondary">Đánh dấu tất cả đã đọc</button>
+        </form>
+    }
+}
+
+@if (!Model.Any())
+{
+    <div class="card"><div class="empty">
+        <div class="empty-title">Không có thông báo</div>
+        <p>Bạn sẽ nhận được thông báo khi được giao task.</p>
+    </div></div>
+}
+else
+{
+    <div class="card">
+        @foreach (var n in Model)
+        {
+            <div class="notif @(n.IsRead ? "" : "unread")">
+                <div class="notif-ic">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+                </div>
+                <div>
+                    <div class="notif-msg">
+                        @if (n.TaskItemId.HasValue)
+                        {
+                            <a asp-controller="Tasks" asp-action="Details" asp-route-id="@n.TaskItemId">@n.Message</a>
+                        }
+                        else
+                        {
+                            @n.Message
+                        }
+                    </div>
+                    <div class="notif-time">@n.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+                @if (!n.IsRead)
+                {
+                    <form class="notif-spacer" asp-action="MarkAsRead" asp-route-id="@n.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-secondary btn-sm">Đánh dấu đã đọc</button>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,92 @@
+@model IEnumerable<UserListItemViewModel>
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+@section TopbarAction {
+    <a class="btn btn-primary" asp-action="Create">Tạo người dùng</a>
+}
+
+@if (TempData["Success"] is string ok)
+{
+    <div class="flash flash-success">@ok</div>
+}
+@if (TempData["Error"] is string err)
+{
+    <div class="flash flash-error">@err</div>
+}
+
+<div class="card">
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Người dùng</th>
+                    <th>Email</th>
+                    <th>Vai trò</th>
+                    <th>Ngày tạo</th>
+                    <th>Dữ liệu</th>
+                    <th class="text-right">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="user-cell">
+                                <partial name="_Avatar" model="@u.FullName" />
+                                <span>@u.FullName @if (u.IsSelf) { <span class="muted text-sm">(bạn)</span> }</span>
+                            </div>
+                        </td>
+                        <td class="muted">@u.Email</td>
+                        <td>
+                            @if (u.IsAdmin)
+                            {
+                                <span class="tag tag-doing plain">Admin</span>
+                            }
+                            else
+                            {
+                                <span class="tag tag-todo plain">User</span>
+                            }
+                        </td>
+                        <td class="muted text-sm">@u.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                        <td class="muted text-sm">@u.OwnedWorkspaceCount workspace • @u.AssignedTaskCount task</td>
+                        <td class="text-right">
+                            <div class="form-actions justify-end">
+                                <a class="btn btn-secondary btn-sm" asp-action="Edit" asp-route-id="@u.Id">Sửa</a>
+                                @if (!u.IsSelf)
+                                {
+                                    @if (u.IsAdmin)
+                                    {
+                                        <form class="inline-form" asp-action="ChangeRole" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@u.Id" />
+                                            <input type="hidden" name="role" value="User" />
+                                            <button type="submit" class="btn btn-secondary btn-sm">Bỏ quyền Admin</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form class="inline-form" asp-action="ChangeRole" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@u.Id" />
+                                            <input type="hidden" name="role" value="Admin" />
+                                            <button type="submit" class="btn btn-primary btn-sm">Cấp quyền Admin</button>
+                                        </form>
+                                    }
+                                    <form class="inline-form" asp-action="Delete" method="post"
+                                          onsubmit="return confirm('Xóa người dùng @u.FullName? Các workspace họ sở hữu (@u.OwnedWorkspaceCount) và toàn bộ dữ liệu bên trong sẽ bị xóa theo.');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@u.Id" />
+                                        <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,16 @@
+@model TaskFormViewModel
+@{
+    ViewData["Title"] = "Sửa task";
+}
+
+<div class="card form-narrow">
+    <div class="card-body">
+        <form asp-action="Edit" method="post">
+            <partial name="_Form" model="Model" />
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                <a class="btn btn-secondary" asp-action="Details" asp-route-id="@Model.Id">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,372 @@
+@model TimelineViewModel
+@{
+    ViewData["Title"] = "Lịch ngày";
+    var dateIso = Model.Date.ToString("yyyy-MM-dd");
+    const double HourH = 56;
+    int Px(int minutes) => (int)Math.Round(minutes / 60.0 * HourH);
+    string Inv(double v) => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    // Chuẩn bị danh sách sự kiện (start/end theo phút trong ngày).
+    var events = Model.Scheduled
+        .Select(t => new
+        {
+            Task = t,
+            Start = t.ScheduledStart!.Value.Hour * 60 + t.ScheduledStart.Value.Minute,
+            End = t.ScheduledStart.Value.Hour * 60 + t.ScheduledStart.Value.Minute + Math.Max(5, t.DurationMinutes)
+        })
+        .OrderBy(e => e.Start).ThenBy(e => e.End)
+        .ToList();
+
+    // Khung giờ hiển thị: mặc định 6:00–24:00, tự mở rộng nếu có việc sớm/muộn hơn.
+    int startHour = 6, endHour = 24;
+    if (events.Any())
+    {
+        startHour = Math.Min(startHour, events.Min(e => e.Start) / 60);
+        endHour = Math.Max(endHour, (events.Max(e => e.End) + 59) / 60);
+    }
+    endHour = Math.Min(24, endHour);
+    int winStart = startHour * 60;                // phút bắt đầu khung
+    int gridHeight = Px((endHour - startHour) * 60);
+
+    int? nowMin = Model.IsToday ? DateTime.Now.Hour * 60 + DateTime.Now.Minute : (int?)null;
+    int? nowTop = nowMin.HasValue && nowMin >= winStart && nowMin <= endHour * 60 ? Px(nowMin.Value - winStart) : (int?)null;
+
+    // Xếp cột cho các sự kiện trùng giờ để chúng nằm cạnh nhau.
+    var place = new Dictionary<int, (int col, int cols)>();
+    int idx = 0;
+    while (idx < events.Count)
+    {
+        int clusterEnd = events[idx].End;
+        int j = idx + 1;
+        while (j < events.Count && events[j].Start < clusterEnd) { clusterEnd = Math.Max(clusterEnd, events[j].End); j++; }
+
+        var colEnds = new List<int>();
+        var colOf = new Dictionary<int, int>();
+        for (int k = idx; k < j; k++)
+        {
+            var e = events[k];
+            int col = -1;
+            for (int c = 0; c < colEnds.Count; c++)
+                if (colEnds[c] <= e.Start) { col = c; colEnds[c] = e.End; break; }
+            if (col == -1) { col = colEnds.Count; colEnds.Add(e.End); }
+            colOf[e.Task.Id] = col;
+        }
+        int cols = colEnds.Count;
+        for (int k = idx; k < j; k++) place[events[k].Task.Id] = (colOf[events[k].Task.Id], cols);
+        idx = j;
+    }
+
+    int totalMins = Model.Scheduled.Sum(t => Math.Max(5, t.DurationMinutes));
+    string Hours(int m) => m % 60 == 0 ? $"{m / 60}h" : $"{m / 60}h{m % 60:00}";
+}
+
+@section TopbarAction {
+    <div class="page-actions">
+        <a class="btn btn-secondary" asp-action="Index">Danh sách</a>
+        <a class="btn btn-secondary" asp-action="Board">Kanban</a>
+        <a class="btn btn-primary" asp-action="Create">Tạo task</a>
+    </div>
+}
+
+<div class="page-head">
+    <h2>Lịch ngày</h2>
+    <div class="sub">Lịch trình trong ngày của bạn. Kéo khối để đổi giờ (mốc 30 phút); kéo mép dưới để đổi thời lượng.</div>
+</div>
+
+<div class="card mb-2">
+    <div class="card-body" style="display:flex; align-items:center; justify-content:space-between;">
+        <div class="date-nav">
+            <a class="btn btn-secondary btn-sm" asp-action="Timeline" asp-route-date="@Model.PrevDate.ToString("yyyy-MM-dd")">‹ Hôm trước</a>
+            <a class="btn btn-secondary btn-sm" asp-action="Timeline" asp-route-date="@Model.NextDate.ToString("yyyy-MM-dd")">Hôm sau ›</a>
+            @if (!Model.IsToday)
+            {
+                <a class="btn btn-secondary btn-sm" asp-action="Timeline">Hôm nay</a>
+            }
+        </div>
+        <div style="font-weight:650;">
+            @Model.Date.ToString("dddd, dd/MM/yyyy", new System.Globalization.CultureInfo("vi-VN"))
+            @if (Model.IsToday) { <span class="tag tag-doing plain" style="margin-left:6px;">Hôm nay</span> }
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<div class="timeline-layout">
+    <div class="card">
+        <!-- Tóm tắt ngày -->
+        <div class="day-summary">
+            <div class="ds-item"><span class="ds-val">@Model.Scheduled.Count</span><span class="ds-lbl">Việc đã lên lịch</span></div>
+            <div class="ds-item"><span class="ds-val">@Hours(totalMins)</span><span class="ds-lbl">Tổng thời lượng</span></div>
+            <div class="ds-item"><span class="ds-val">@Model.Unscheduled.Count</span><span class="ds-lbl">Chưa xếp lịch</span></div>
+        </div>
+
+        <div class="cal-scroll">
+            <div class="cal" data-date="@dateIso" data-hourh="@HourH" data-winstart="@winStart">
+                <div class="cal-hours">
+                    @for (int h = startHour; h < endHour; h++)
+                    {
+                        <div class="cal-hour-label">@($"{h:00}:00")</div>
+                    }
+                </div>
+                <div class="cal-grid" id="grid" style="height:@(gridHeight)px;">
+                    @if (nowTop.HasValue)
+                    {
+                        <div class="cal-now" id="nowline" style="top:@(nowTop.Value)px;"></div>
+                    }
+                    <div class="cal-guide" id="guide"><span class="cal-guide-label" id="guideLabel"></span></div>
+                    @foreach (var e in events)
+                    {
+                        var t = e.Task;
+                        var p = place[t.Id];
+                        double widthPct = 100.0 / p.cols;
+                        double leftPct = p.col * widthPct;
+                        int top = Px(e.Start - winStart);
+                        int height = Math.Max(24, Px(e.End - e.Start) - 3);
+                        var endTime = t.ScheduledStart!.Value.AddMinutes(Math.Max(5, t.DurationMinutes));
+                        <div class="cal-event prio-@t.Priority.ToString().ToLower() @(t.Status == TaskStatus.Done ? "done" : "")"
+                             draggable="true" data-id="@t.Id" data-start="@t.ScheduledStart.Value.ToString("yyyy-MM-ddTHH:mm")"
+                             data-duration="@Math.Max(5, t.DurationMinutes)" data-title="@t.Title"
+                             data-url="@Url.Action("Details", "Tasks", new { id = t.Id })"
+                             style="top:@(top)px; height:@(height)px; left:calc(@(Inv(leftPct))% + 4px); width:calc(@(Inv(widthPct))% - 8px);"
+                             title="@t.Title — bấm để chỉnh giờ">
+                            <div class="cal-event-time">@t.ScheduledStart.Value.ToString("HH:mm")–@endTime.ToString("HH:mm")</div>
+                            <div class="cal-event-title">@t.Title</div>
+                            @if (height >= 50)
+                            {
+                                <div class="cal-event-sub">@t.Project?.Name</div>
+                            }
+                            <div class="cal-resize" title="Kéo để đổi thời lượng"></div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột chưa xếp lịch -->
+    <aside class="card unsched-card">
+        <div class="card-body">
+            <div class="card-head"><h3>Chưa xếp lịch</h3></div>
+            <p class="muted text-sm" style="margin-top:-8px;">Kéo task vào lịch. Thả về đây để gỡ lịch.</p>
+            <div class="unsched-list" id="unsched">
+                @if (!Model.Unscheduled.Any())
+                {
+                    <p class="muted text-sm">Không còn task nào chờ xếp lịch.</p>
+                }
+                @foreach (var t in Model.Unscheduled)
+                {
+                    <div class="tl-chip" draggable="true" data-id="@t.Id">
+                        <a class="tl-chip-title" asp-action="Details" asp-route-id="@t.Id">@t.Title</a>
+                        <div class="tl-chip-meta">
+                            <span class="tag @t.Priority.CssClass()">@t.Priority.Label()</span>
+                            <span>@t.Project?.Name</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </aside>
+</div>
+
+<!-- Popup chỉnh khung giờ -->
+<div class="cal-backdrop" id="popBackdrop" hidden></div>
+<div class="cal-pop" id="editPop" hidden>
+    <div class="cal-pop-title" id="epTitle"></div>
+    <div class="cal-pop-sub">Chỉnh khung giờ (mốc 5 phút)</div>
+    <div class="cal-pop-err" id="epErr"></div>
+    <div class="cal-pop-row">
+        <label for="epStart">Bắt đầu</label>
+        <input type="time" id="epStart" step="300" class="form-control form-control-sm" />
+    </div>
+    <div class="cal-pop-row">
+        <label for="epEnd">Kết thúc</label>
+        <input type="time" id="epEnd" step="300" class="form-control form-control-sm" />
+    </div>
+    <div class="cal-pop-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="epSave">Lưu</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="epUnsched">Gỡ lịch</button>
+        <a class="btn btn-secondary btn-sm grow" id="epDetail" href="#">Chi tiết</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const cal = document.querySelector('.cal');
+            const grid = document.getElementById('grid');
+            const unsched = document.getElementById('unsched');
+            const dateIso = cal.getAttribute('data-date');
+            const HOUR_H = parseFloat(cal.getAttribute('data-hourh'));
+            const WIN_START = parseInt(cal.getAttribute('data-winstart')); // phút bắt đầu khung
+            const SNAP = 5; // mốc 5 phút
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const guide = document.getElementById('guide');
+            const guideLabel = document.getElementById('guideLabel');
+            let draggedId = null;
+
+            function pad(n) { return String(n).padStart(2, '0'); }
+
+            // Tính phút (đã snap) từ vị trí chuột theo trục dọc.
+            function minutesAt(clientY) {
+                const rect = grid.getBoundingClientRect();
+                let m = WIN_START + Math.round(((clientY - rect.top) / HOUR_H * 60) / SNAP) * SNAP;
+                return Math.max(0, Math.min(23 * 60 + 55, m));
+            }
+
+            async function save(id, opts) {
+                // Lưu vị trí cuộn để không bị nhảy sau khi tải lại.
+                sessionStorage.setItem('cal-scrollY', String(window.scrollY));
+                const body = new URLSearchParams();
+                body.append('id', id);
+                if (opts.start !== undefined) body.append('start', opts.start);
+                if (opts.duration !== undefined) body.append('duration', opts.duration);
+                body.append('__RequestVerificationToken', token);
+                const res = await fetch('@Url.Action("Schedule", "Tasks")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body.toString()
+                });
+                if (res.ok) { location.reload(); }
+                else { alert('Không cập nhật được lịch.'); location.reload(); }
+            }
+
+            document.addEventListener('dragstart', function (e) {
+                const card = e.target.closest('[data-id]');
+                if (!card) return;
+                draggedId = card.getAttribute('data-id');
+                card.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            document.addEventListener('dragend', function (e) {
+                const card = e.target.closest('[data-id]');
+                if (card) card.classList.remove('dragging');
+                draggedId = null;
+            });
+
+            // Thả vào lưới lịch -> tính giờ theo trục dọc; hiện chỉ báo giờ (mốc 5 phút).
+            grid.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                grid.classList.add('drop-hover');
+                const minutes = minutesAt(e.clientY);
+                guide.style.top = Px(minutes - WIN_START) + 'px';
+                guideLabel.textContent = pad(Math.floor(minutes / 60)) + ':' + pad(minutes % 60);
+                guide.style.display = 'block';
+            });
+            grid.addEventListener('dragleave', function (e) {
+                if (e.target === grid) { grid.classList.remove('drop-hover'); guide.style.display = 'none'; }
+            });
+            grid.addEventListener('drop', function (e) {
+                e.preventDefault();
+                grid.classList.remove('drop-hover');
+                guide.style.display = 'none';
+                if (!draggedId) return;
+                const minutes = minutesAt(e.clientY);
+                save(draggedId, { start: dateIso + 'T' + pad(Math.floor(minutes / 60)) + ':' + pad(minutes % 60) });
+            });
+
+            // Px theo cùng tỉ lệ với máy chủ.
+            function Px(min) { return Math.round(min / 60 * HOUR_H); }
+
+            // Thả về cột chưa xếp lịch -> gỡ lịch.
+            unsched.addEventListener('dragover', function (e) { e.preventDefault(); unsched.classList.add('drop-hover'); });
+            unsched.addEventListener('dragleave', function () { unsched.classList.remove('drop-hover'); });
+            unsched.addEventListener('drop', function (e) {
+                e.preventDefault();
+                unsched.classList.remove('drop-hover');
+                if (draggedId) save(draggedId, { start: '' });
+            });
+
+            // Resize đổi thời lượng (kéo mép dưới).
+            document.querySelectorAll('.cal-resize').forEach(function (handle) {
+                handle.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const ev = handle.closest('.cal-event');
+                    ev.draggable = false;
+                    ev.classList.add('resizing');
+                    const startY = e.clientY;
+                    const startH = ev.offsetHeight;
+                    function onMove(m) { ev.style.height = Math.max(10, startH + (m.clientY - startY)) + 'px'; }
+                    function onUp() {
+                        document.removeEventListener('mousemove', onMove);
+                        document.removeEventListener('mouseup', onUp);
+                        let dur = Math.round((ev.offsetHeight / HOUR_H * 60) / SNAP) * SNAP;
+                        dur = Math.max(5, Math.min(480, dur));
+                        ev.draggable = true; ev.classList.remove('resizing');
+                        save(ev.getAttribute('data-id'), { duration: dur });
+                    }
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                });
+            });
+
+            // ----- Bấm vào khối để chỉnh khung giờ trực tiếp -----
+            const pop = document.getElementById('editPop');
+            const backdrop = document.getElementById('popBackdrop');
+            const epTitle = document.getElementById('epTitle');
+            const epStart = document.getElementById('epStart');
+            const epEnd = document.getElementById('epEnd');
+            const epErr = document.getElementById('epErr');
+            const epDetail = document.getElementById('epDetail');
+            let curId = null;
+
+            function toMin(hhmm) { const a = hhmm.split(':'); return parseInt(a[0]) * 60 + parseInt(a[1]); }
+            function fromMin(m) { m = Math.max(0, Math.min(1439, m)); return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
+            function closeEditor() { pop.hidden = true; backdrop.hidden = true; curId = null; }
+
+            function openEditor(ev) {
+                curId = ev.getAttribute('data-id');
+                const hhmm = ev.getAttribute('data-start').split('T')[1];
+                const dur = parseInt(ev.getAttribute('data-duration'));
+                epTitle.textContent = ev.getAttribute('data-title');
+                epStart.value = hhmm;
+                epEnd.value = fromMin(toMin(hhmm) + dur);
+                epDetail.href = ev.getAttribute('data-url');
+                epErr.style.display = 'none';
+
+                const rect = ev.getBoundingClientRect();
+                let left = rect.right + 8;
+                if (left + 250 > window.innerWidth) left = rect.left - 258;
+                left = Math.max(8, left);
+                let top = Math.max(8, rect.top);
+                if (top + 230 > window.innerHeight) top = window.innerHeight - 240;
+                pop.style.left = left + 'px';
+                pop.style.top = Math.max(8, top) + 'px';
+                pop.hidden = false; backdrop.hidden = false;
+            }
+
+            // Bấm vào khối (không phải tay cầm resize) -> mở popup.
+            grid.addEventListener('click', function (e) {
+                if (e.target.closest('.cal-resize')) return;
+                const ev = e.target.closest('.cal-event');
+                if (ev) { e.preventDefault(); openEditor(ev); }
+            });
+
+            document.getElementById('epSave').addEventListener('click', function () {
+                if (!curId) return;
+                const s = epStart.value, en = epEnd.value;
+                if (!s || !en) { epErr.textContent = 'Nhập giờ bắt đầu và kết thúc.'; epErr.style.display = 'block'; return; }
+                let dur = toMin(en) - toMin(s);
+                if (dur < 5) { epErr.textContent = 'Giờ kết thúc phải sau giờ bắt đầu (tối thiểu 5 phút).'; epErr.style.display = 'block'; return; }
+                dur = Math.round(dur / SNAP) * SNAP;
+                save(curId, { start: dateIso + 'T' + s, duration: dur });
+            });
+            document.getElementById('epUnsched').addEventListener('click', function () {
+                if (curId) save(curId, { start: '' });
+            });
+            backdrop.addEventListener('click', closeEditor);
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeEditor(); });
+
+            // Sau khi tải lại do thao tác: khôi phục vị trí cuộn (không nhảy).
+            const savedY = sessionStorage.getItem('cal-scrollY');
+            if (savedY !== null) {
+                sessionStorage.removeItem('cal-scrollY');
+                window.scrollTo(0, parseInt(savedY));
+            } else if (document.getElementById('nowline')) {
+                // Lần mở mới: đưa vạch "bây giờ" vào tầm nhìn.
+                document.getElementById('nowline').scrollIntoView({ block: 'center' });
+            }
+        })();
+    </script>
+}
