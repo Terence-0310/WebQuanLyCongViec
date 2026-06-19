@@ -8,7 +8,7 @@ namespace Cetee.Services;
 
 public interface ITaskService
 {
-    Task<List<TaskItem>> GetForUserAsync(int userId, bool isAdmin, int? projectId, TaskStatus? status, string? search = null);
+    Task<List<TaskItem>> GetForUserAsync(int userId, bool isAdmin, int? projectId, TaskStatus? status, string? search = null, IReadOnlyList<int>? assigneeFilter = null);
     Task<TaskItem?> GetByIdForUserAsync(int id, int userId, bool isAdmin);
     Task<TaskDetailsViewModel?> GetDetailsAsync(int id, int userId, bool isAdmin);
     Task<TaskItem?> CreateAsync(TaskFormViewModel model, int userId, bool isAdmin);
@@ -19,7 +19,7 @@ public interface ITaskService
     Task<List<Project>> GetAccessibleProjectsAsync(int userId, bool isAdmin);
     Task<List<User>> GetProjectMembersAsync(int projectId);
 
-    Task<TimelineViewModel> GetTimelineAsync(int userId, bool isAdmin, DateTime date);
+    Task<TimelineViewModel> GetTimelineAsync(int userId, bool isAdmin, DateTime date, IReadOnlyList<int>? assigneeFilter = null);
     Task<bool> ScheduleAsync(int id, bool changeStart, DateTime? start, int? duration, int userId, bool isAdmin);
 }
 
@@ -40,10 +40,17 @@ public class TaskService : ITaskService
     private IQueryable<TaskItem> Accessible(int userId, bool isAdmin)
     {
         var query = _db.Tasks.AsQueryable();
-        return isAdmin ? query : query.Where(t => t.Project.Workspace.Members.Any(m => m.UserId == userId));
+        if (isAdmin) return query;
+
+        // User thường thấy task: trong workspace mình tham gia, HOẶC được giao cho mình,
+        // HOẶC được giao cho nhân viên trực thuộc mình (quản lý xem việc của nhân viên).
+        return query.Where(t =>
+            t.Project.Workspace.Members.Any(m => m.UserId == userId)
+            || t.AssigneeId == userId
+            || (t.Assignee != null && t.Assignee.ManagerId == userId));
     }
 
-    public async Task<List<TaskItem>> GetForUserAsync(int userId, bool isAdmin, int? projectId, TaskStatus? status, string? search = null)
+    public async Task<List<TaskItem>> GetForUserAsync(int userId, bool isAdmin, int? projectId, TaskStatus? status, string? search = null, IReadOnlyList<int>? assigneeFilter = null)
     {
         var query = Accessible(userId, isAdmin)
             .Include(t => t.Project)
@@ -52,6 +59,8 @@ public class TaskService : ITaskService
 
         if (projectId.HasValue) query = query.Where(t => t.ProjectId == projectId.Value);
         if (status.HasValue) query = query.Where(t => t.Status == status.Value);
+        if (assigneeFilter != null)
+            query = query.Where(t => t.AssigneeId != null && assigneeFilter.Contains(t.AssigneeId.Value));
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
@@ -199,14 +208,19 @@ public class TaskService : ITaskService
             .Select(m => m.User)
             .ToListAsync();
 
-    public async Task<TimelineViewModel> GetTimelineAsync(int userId, bool isAdmin, DateTime date)
+    public async Task<TimelineViewModel> GetTimelineAsync(int userId, bool isAdmin, DateTime date, IReadOnlyList<int>? assigneeFilter = null)
     {
         var dayStart = date.Date;
         var dayEnd = dayStart.AddDays(1);
 
         var baseQuery = Accessible(userId, isAdmin)
             .Include(t => t.Project)
-            .Include(t => t.Assignee);
+            .Include(t => t.Assignee)
+            .AsQueryable();
+
+        // Lọc theo người được giao khi xem lịch của một nhân viên cụ thể.
+        if (assigneeFilter != null)
+            baseQuery = baseQuery.Where(t => t.AssigneeId != null && assigneeFilter.Contains(t.AssigneeId.Value));
 
         // Task đã xếp lịch trong ngày đang xem.
         var scheduled = await baseQuery

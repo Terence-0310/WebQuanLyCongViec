@@ -33,11 +33,25 @@
                 else
                 {
                     <select class="form-control" asp-for="Role">
-                        <option value="User">User</option>
+                        <option value="User">User (Nhân viên / cá nhân)</option>
+                        <option value="Manager">Manager (Quản lý)</option>
                         <option value="Admin">Admin</option>
                     </select>
                     <span class="field-error" asp-validation-for="Role"></span>
                 }
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="ManagerId"></label>
+                <select class="form-control" asp-for="ManagerId">
+                    <option value="">— Không trực thuộc ai —</option>
+                    @foreach (var m in Model.ManagerOptions)
+                    {
+                        if (m.Id == Model.Id) { continue; }
+                        <option value="@m.Id">@m.FullName (@m.Role?.Name)</option>
+                    }
+                </select>
+                <span class="field-error muted">Chọn nếu đây là nhân viên trực thuộc một quản lý.</span>
             </div>
 
             <div class="form-group">

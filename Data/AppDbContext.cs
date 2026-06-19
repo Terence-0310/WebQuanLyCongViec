@@ -29,6 +29,14 @@ public class AppDbContext : DbContext
             .HasIndex(u => u.Email)
             .IsUnique();
 
+        // Quan hệ quản lý: User (nhân viên) -> Manager (tự tham chiếu User).
+        // Restrict để tránh vòng cascade; khi xóa Manager sẽ gỡ liên kết thủ công.
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.Manager)
+            .WithMany(u => u.Subordinates)
+            .HasForeignKey(u => u.ManagerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Một user chỉ tham gia một workspace một lần.
         modelBuilder.Entity<WorkspaceMember>()
             .HasIndex(m => new { m.WorkspaceId, m.UserId })

@@ -450,3 +450,8 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 .text-right { text-align: right; }
 .justify-end { justify-content: flex-end; }
 .user-cell { display: flex; align-items: center; gap: 10px; }
+
+/* Bộ chọn "Xem theo người" trên Lịch ngày / Kanban / Danh sách / Dashboard */
+.employee-picker { display: inline-flex; align-items: center; gap: 6px; }
+.employee-picker-label { font-size: 12.5px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.employee-picker select { min-width: 160px; }

@@ -1,0 +1,25 @@
+@model Cetee.ViewModels.EmployeeScopeResult
+@*
+    Bộ chọn "Xem theo người" dùng chung cho Lịch ngày / Kanban / Danh sách / Dashboard.
+    Chỉ hiển thị khi người xem là Admin/Manager (có nhiều hơn một người để chọn).
+    Tự giữ lại các tham số lọc khác trên URL (date, projectId, status, q) khi đổi người.
+*@
+@if (Model is { CanViewOthers: true })
+{
+    var query = ViewContext.HttpContext.Request.Query;
+    <form method="get" class="employee-picker">
+        @foreach (var kv in query)
+        {
+            if (kv.Key == "employeeId") { continue; }
+            <input type="hidden" name="@kv.Key" value="@kv.Value" />
+        }
+        <span class="employee-picker-label">Xem của</span>
+        <select name="employeeId" class="form-control form-control-sm" onchange="this.form.submit()">
+            <option value="0" selected="@(Model.SelectedId == 0)">Tất cả</option>
+            @foreach (var u in Model.Visible)
+            {
+                <option value="@u.Id" selected="@(Model.SelectedId == u.Id)">@u.FullName@(u.Role != null ? $" — {u.Role.Name}" : "")</option>
+            }
+        </select>
+    </form>
+}

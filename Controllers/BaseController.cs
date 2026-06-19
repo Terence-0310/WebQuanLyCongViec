@@ -12,4 +12,10 @@ public abstract class BaseController : Controller
 
     /// <summary>Người dùng hiện tại có vai trò Admin hay không.</summary>
     protected bool IsAdmin => User.IsInRole("Admin");
+
+    /// <summary>Người dùng hiện tại có vai trò Manager (quản lý) hay không.</summary>
+    protected bool IsManager => User.IsInRole("Manager");
+
+    /// <summary>Tên vai trò hiện tại ("Admin" / "Manager" / "User").</summary>
+    protected string CurrentRole => User.FindFirstValue(ClaimTypes.Role) ?? "User";
 }

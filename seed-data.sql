@@ -30,11 +30,13 @@ DECLARE @userHash  NVARCHAR(MAX) = N'100000.ffGk9b8zGWcNKTzrUiLCkQ==.9mx9yRhJ2GW
 DECLARE @now   DATETIME2 = GETUTCDATE();
 DECLARE @today DATETIME2 = CAST(CAST(GETUTCDATE() AS DATE) AS DATETIME2);
 
--- 1) Bảo đảm có vai trò Admin/User
-IF NOT EXISTS (SELECT 1 FROM Roles WHERE Name = 'Admin') INSERT INTO Roles(Name) VALUES (N'Admin');
-IF NOT EXISTS (SELECT 1 FROM Roles WHERE Name = 'User')  INSERT INTO Roles(Name) VALUES (N'User');
+-- 1) Bảo đảm có vai trò Admin/Manager/User
+IF NOT EXISTS (SELECT 1 FROM Roles WHERE Name = 'Admin')   INSERT INTO Roles(Name) VALUES (N'Admin');
+IF NOT EXISTS (SELECT 1 FROM Roles WHERE Name = 'Manager') INSERT INTO Roles(Name) VALUES (N'Manager');
+IF NOT EXISTS (SELECT 1 FROM Roles WHERE Name = 'User')    INSERT INTO Roles(Name) VALUES (N'User');
 
 DECLARE @adminRole INT = (SELECT Id FROM Roles WHERE Name = 'Admin');
+DECLARE @mgrRole   INT = (SELECT Id FROM Roles WHERE Name = 'Manager');
 DECLARE @userRole  INT = (SELECT Id FROM Roles WHERE Name = 'User');
 
 -- 2) Bảo đảm có tài khoản Admin bootstrap
@@ -54,13 +56,15 @@ BEGIN
     BEGIN TRAN;
 
     -- ===== Users (mật khẩu: User@123) =====
-    INSERT INTO Users (FullName,Email,PasswordHash,RoleId,CreatedAt) VALUES (N'Lê Minh Quân','quan.le@cetee.vn',@userHash,@userRole,DATEADD(day,-40,@now));
+    -- Lê Minh Quân là Manager; Trần Đức Anh và Võ Thị Mai là nhân viên trực thuộc Quân.
+    -- Phạm Thu Hà là người dùng độc lập (không trực thuộc ai).
+    INSERT INTO Users (FullName,Email,PasswordHash,RoleId,CreatedAt) VALUES (N'Lê Minh Quân','quan.le@cetee.vn',@userHash,@mgrRole,DATEADD(day,-40,@now));
     DECLARE @quan INT=SCOPE_IDENTITY();
     INSERT INTO Users (FullName,Email,PasswordHash,RoleId,CreatedAt) VALUES (N'Phạm Thu Hà','ha.pham@cetee.vn',@userHash,@userRole,DATEADD(day,-38,@now));
     DECLARE @ha INT=SCOPE_IDENTITY();
-    INSERT INTO Users (FullName,Email,PasswordHash,RoleId,CreatedAt) VALUES (N'Trần Đức Anh','ducanh.tran@cetee.vn',@userHash,@userRole,DATEADD(day,-35,@now));
+    INSERT INTO Users (FullName,Email,PasswordHash,RoleId,ManagerId,CreatedAt) VALUES (N'Trần Đức Anh','ducanh.tran@cetee.vn',@userHash,@userRole,@quan,DATEADD(day,-35,@now));
     DECLARE @ducanh INT=SCOPE_IDENTITY();
-    INSERT INTO Users (FullName,Email,PasswordHash,RoleId,CreatedAt) VALUES (N'Võ Thị Mai','mai.vo@cetee.vn',@userHash,@userRole,DATEADD(day,-33,@now));
+    INSERT INTO Users (FullName,Email,PasswordHash,RoleId,ManagerId,CreatedAt) VALUES (N'Võ Thị Mai','mai.vo@cetee.vn',@userHash,@userRole,@quan,DATEADD(day,-33,@now));
     DECLARE @mai INT=SCOPE_IDENTITY();
 
     -- ===== Workspaces =====

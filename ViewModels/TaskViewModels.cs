@@ -52,6 +52,7 @@ public class TaskListViewModel
     public TaskStatus? Status { get; set; }
     public string? Search { get; set; }
     public IEnumerable<SelectListItem> ProjectOptions { get; set; } = new List<SelectListItem>();
+    public EmployeeScopeResult? Scope { get; set; }
 }
 
 /// <summary>Dữ liệu cho bảng Kanban: nhóm task theo cột trạng thái.</summary>
@@ -62,6 +63,7 @@ public class KanbanViewModel
     public List<TaskItem> Todo { get; set; } = new();
     public List<TaskItem> Doing { get; set; } = new();
     public List<TaskItem> Done { get; set; } = new();
+    public EmployeeScopeResult? Scope { get; set; }
 }
 
 /// <summary>Dữ liệu cho trang Timeline (lịch ngày): task đã xếp lịch và chưa xếp lịch.</summary>
@@ -70,6 +72,7 @@ public class TimelineViewModel
     public DateTime Date { get; set; }
     public List<TaskItem> Scheduled { get; set; } = new();   // có ScheduledStart trong ngày
     public List<TaskItem> Unscheduled { get; set; } = new();  // chưa xếp lịch, chưa hoàn thành
+    public EmployeeScopeResult? Scope { get; set; }
 
     public DateTime PrevDate => Date.AddDays(-1);
     public DateTime NextDate => Date.AddDays(1);
