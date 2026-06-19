@@ -13,6 +13,12 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="lp">
+    <!-- Thanh thông báo -->
+    <div class="lp-announce">
+        <span class="lp-announce-pill">MỚI</span>
+        Lịch Tuần &amp; Tháng — theo dõi tiến độ toàn dự án chỉ trong một màn hình.
+    </div>
+
     <!-- Thanh điều hướng -->
     <header class="lp-nav">
         <div class="lp-container lp-nav-inner">
@@ -22,36 +28,46 @@
             <nav class="lp-nav-links">
                 <a href="#features">Tính năng</a>
                 <a href="#how">Cách hoạt động</a>
-                <a href="#why">Vì sao chọn Cetee</a>
+                <a href="#why">Vì sao Cetee</a>
             </nav>
             <div class="lp-nav-actions">
-                <a class="btn btn-secondary" asp-controller="Account" asp-action="Login">Đăng nhập</a>
-                <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Đăng ký miễn phí</a>
+                <a class="btn btn-ghost" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Dùng thử miễn phí</a>
             </div>
         </div>
     </header>
 
     <!-- Hero -->
     <section class="lp-hero">
+        <div class="lp-hero-bg" aria-hidden="true"></div>
         <div class="lp-container lp-hero-grid">
             <div class="lp-hero-copy">
-                <span class="lp-eyebrow">Quản lý công việc dự án</span>
-                <h1>Tổ chức, theo dõi và hoàn thành công việc nhóm — ở cùng một nơi.</h1>
-                <p>Cetee giúp đội ngũ của bạn sắp xếp công việc theo workspace, project và bảng Kanban;
-                    lên lịch theo ngày / tuần / tháng và nắm tiến độ hoàn thành trong vài cú nhấp.</p>
+                <span class="lp-eyebrow"><span class="lp-eyebrow-dot"></span> Nền tảng quản lý công việc cho đội ngũ hiện đại</span>
+                <h1>Quản lý công việc nhóm <span class="lp-grad">rõ ràng, hoàn thành nhanh hơn</span>.</h1>
+                <p>Cetee hợp nhất workspace, dự án, bảng Kanban và lịch tiến độ vào một nền tảng duy nhất —
+                    để cả đội luôn biết việc gì cần làm, ai phụ trách và khi nào hoàn thành.</p>
                 <div class="lp-hero-cta">
-                    <a class="btn btn-primary btn-lg" asp-controller="Account" asp-action="Register">Bắt đầu miễn phí →</a>
-                    <a class="btn btn-secondary btn-lg" asp-controller="Account" asp-action="Login">Tôi đã có tài khoản</a>
+                    <a class="btn btn-primary btn-lg" asp-controller="Account" asp-action="Register">Dùng thử miễn phí</a>
+                    <a class="btn btn-secondary btn-lg" href="#features">Khám phá tính năng</a>
                 </div>
                 <div class="lp-trust">
-                    <span>✓ Phân quyền công ty 4 cấp</span>
-                    <span>✓ Đăng nhập Google</span>
-                    <span>✓ Quên mật khẩu qua email OTP</span>
+                    <span><svg class="lp-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Miễn phí để bắt đầu</span>
+                    <span><svg class="lp-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Không cần thẻ tín dụng</span>
+                    <span><svg class="lp-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Thiết lập trong 1 phút</span>
                 </div>
             </div>
 
             <!-- Mockup sản phẩm (vẽ bằng CSS, mô phỏng bảng Kanban) -->
             <div class="lp-hero-art" aria-hidden="true">
+                <div class="lp-hero-glow"></div>
+                <div class="lp-float lp-float-1">
+                    <span class="lp-float-ic ok"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span>
+                    <div><b>Tiến độ dự án</b><small>Hoàn thành 78%</small></div>
+                </div>
+                <div class="lp-float lp-float-2">
+                    <span class="lp-float-ic bell"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+                    <div><b>Bạn được giao việc</b><small>Tích hợp VNPay</small></div>
+                </div>
                 <div class="lp-mock">
                     <div class="lp-mock-bar">
                         <span class="d r"></span><span class="d y"></span><span class="d g"></span>
@@ -81,43 +97,147 @@
         </div>
     </section>
 
+    <!-- Dải số liệu / định vị -->
+    <section class="lp-metrics-wrap">
+        <div class="lp-container">
+            <p class="lp-metrics-label">Được thiết kế cho cách vận hành của đội ngũ hiện đại</p>
+            <div class="lp-metrics">
+                <div class="lp-metric"><span class="n">4</span><span class="l">cấp phân quyền công ty</span></div>
+                <div class="lp-metric"><span class="n">3</span><span class="l">chế độ lịch tiến độ</span></div>
+                <div class="lp-metric"><span class="n">100%</span><span class="l">chạy trên trình duyệt</span></div>
+                <div class="lp-metric"><span class="n">0đ</span><span class="l">chi phí để bắt đầu</span></div>
+            </div>
+        </div>
+    </section>
+
     <!-- Tính năng -->
     <section id="features" class="lp-section">
         <div class="lp-container">
             <div class="lp-section-head">
-                <h2>Mọi thứ để vận hành dự án trơn tru</h2>
-                <p>Từ giao việc đến theo dõi tiến độ — tất cả trong một công cụ gọn nhẹ.</p>
+                <span class="lp-tag">TÍNH NĂNG</span>
+                <h2>Tất cả công cụ vận hành dự án — trong một nơi</h2>
+                <p>Từ giao việc đến theo dõi tiến độ, mọi thứ được hợp nhất để đội ngũ tập trung vào điều quan trọng nhất.</p>
             </div>
             <div class="lp-features">
                 <div class="lp-feature">
-                    <div class="lp-fic ic-blue"><svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>
-                    <h3>Workspace &amp; Project</h3>
-                    <p>Tổ chức công việc theo không gian nhóm và dự án, có chủ sở hữu và thành viên rõ ràng.</p>
+                    <div class="lp-fic fic-1"><svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div>
+                    <h3>Workspace &amp; dự án</h3>
+                    <p>Cấu trúc công việc theo không gian nhóm và dự án, phân định rõ chủ sở hữu và thành viên.</p>
                 </div>
                 <div class="lp-feature">
-                    <div class="lp-fic ic-green"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/></svg></div>
-                    <h3>Bảng Kanban</h3>
-                    <p>Kéo–thả công việc qua 3 cột Cần làm / Đang làm / Hoàn thành để cập nhật tiến độ tức thì.</p>
+                    <div class="lp-fic fic-2"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/></svg></div>
+                    <h3>Bảng Kanban trực quan</h3>
+                    <p>Kéo–thả công việc qua các cột Cần làm · Đang làm · Hoàn thành, cập nhật trạng thái tức thì.</p>
                 </div>
                 <div class="lp-feature">
-                    <div class="lp-fic ic-amber"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-                    <h3>Lịch Ngày / Tuần / Tháng</h3>
-                    <p>Xếp lịch công việc và theo dõi tiến độ hoàn thành cả dự án theo từng kỳ.</p>
+                    <div class="lp-fic fic-3"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+                    <h3>Lịch &amp; tiến độ dự án</h3>
+                    <p>Lên lịch theo Ngày / Tuần / Tháng và đo lường mức độ hoàn thành của cả dự án theo từng kỳ.</p>
                 </div>
                 <div class="lp-feature">
-                    <div class="lp-fic ic-blue"><svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
-                    <h3>Phân quyền công ty</h3>
-                    <p>4 cấp Super Admin → Admin → Manager → User; mỗi cấp chỉ quản lý đúng phạm vi của mình.</p>
+                    <div class="lp-fic fic-4"><svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+                    <h3>Phân quyền theo cấp bậc</h3>
+                    <p>Mô hình Super Admin → Admin → Manager → User; mỗi cấp chỉ quản lý đúng phạm vi đội của mình.</p>
                 </div>
                 <div class="lp-feature">
-                    <div class="lp-fic ic-green"><svg class="icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-                    <h3>Giao việc đa phụ trách</h3>
-                    <p>Một công việc có thể giao cho nhiều người cùng làm; ai cũng nhận được thông báo.</p>
+                    <div class="lp-fic fic-5"><svg class="icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+                    <h3>Cộng tác đa phụ trách</h3>
+                    <p>Giao một công việc cho nhiều thành viên cùng thực hiện; mỗi người đều nhận được thông báo.</p>
                 </div>
                 <div class="lp-feature">
-                    <div class="lp-fic ic-red"><svg class="icon" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
-                    <h3>Thông báo &amp; bảo mật</h3>
-                    <p>Thông báo trong ứng dụng, đăng nhập Google và quên mật khẩu qua mã OTP gửi email.</p>
+                    <div class="lp-fic fic-6"><svg class="icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                    <h3>Bảo mật &amp; đăng nhập</h3>
+                    <p>Đăng nhập Google chỉ một chạm và khôi phục mật khẩu an toàn bằng mã OTP gửi qua email.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Khám phá sâu: các khối tính năng xen kẽ (kiểu Notion) -->
+    <section class="lp-section">
+        <div class="lp-container lp-shows">
+            <!-- Row 1: Workspace & tiến độ -->
+            <div class="lp-show">
+                <div class="lp-show-copy">
+                    <span class="lp-tag">KHÔNG GIAN LÀM VIỆC</span>
+                    <h2>Mọi dự án, gọn trong một không gian</h2>
+                    <p>Nhóm công việc theo workspace của từng đội, mở dự án bên trong và nắm tiến độ tổng quan chỉ trong một cái nhìn.</p>
+                    <ul class="lp-show-feat">
+                        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Workspace cho từng đội, dự án không giới hạn</li>
+                        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Thanh tiến độ theo % công việc hoàn thành</li>
+                        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Phân định chủ sở hữu &amp; thành viên</li>
+                    </ul>
+                </div>
+                <div class="lp-show-art">
+                    <div class="lp-panel">
+                        <div class="lp-panel-title">Tiến độ dự án</div>
+                        <div class="lp-pr"><div class="lp-pr-top"><span>Website Thương mại điện tử</span><span class="lp-pr-pct">72%</span></div><div class="progress"><div class="progress-bar" style="width:72%"></div></div></div>
+                        <div class="lp-pr"><div class="lp-pr-top"><span>Ứng dụng Mobile Bán hàng</span><span class="lp-pr-pct">45%</span></div><div class="progress"><div class="progress-bar" style="width:45%"></div></div></div>
+                        <div class="lp-pr"><div class="lp-pr-top"><span>Hệ thống Quản trị Nội bộ</span><span class="lp-pr-pct">90%</span></div><div class="progress"><div class="progress-bar green" style="width:90%"></div></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Lịch & tiến độ (đảo chiều) -->
+            <div class="lp-show rev">
+                <div class="lp-show-copy">
+                    <span class="lp-tag">LỊCH &amp; TIẾN ĐỘ</span>
+                    <h2>Nắm tiến độ cả tháng trong một màn hình</h2>
+                    <p>Xếp lịch công việc theo Ngày / Tuần / Tháng và đo lường mức độ hoàn thành của cả dự án theo từng kỳ — biết ngay đang chậm ở đâu.</p>
+                    <ul class="lp-show-feat">
+                        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Ba chế độ lịch: Ngày, Tuần, Tháng</li>
+                        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Tỷ lệ hoàn thành theo từng kỳ</li>
+                        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Kéo–thả công việc để xếp lịch</li>
+                    </ul>
+                </div>
+                <div class="lp-show-art">
+                    <div class="lp-panel">
+                        <div class="lp-panel-head">Tháng 6 · <b>78% hoàn thành</b></div>
+                        @{
+                            var dots = new Dictionary<int, string> {
+                                {2,"ok"},{4,"hi"},{6,"ok"},{9,"md"},{11,"ok"},{12,"hi"},{15,"ok"},
+                                {16,"md"},{18,"ok"},{19,"hi"},{20,"ok"},{23,"md"},{25,"ok"},{26,"hi"}
+                            };
+                        }
+                        <div class="lp-cal-mini">
+                            @for (int d = 1; d <= 28; d++)
+                            {
+                                var cls = d == 21 ? "today" : (dots.ContainsKey(d) ? "has " + dots[d] : "");
+                                <span class="lp-cd @cls">@d</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Phân quyền & cộng tác -->
+            <div class="lp-show">
+                <div class="lp-show-copy">
+                    <span class="lp-tag">CỘNG TÁC</span>
+                    <h2>Phân quyền &amp; giao việc rõ ràng</h2>
+                    <p>Mô hình phân cấp công ty giúp mỗi người thấy đúng phạm vi của mình; giao một việc cho nhiều người cùng làm và ai cũng được thông báo.</p>
+                    <ul class="lp-show-feat">
+                        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Phân cấp Super Admin → Admin → Manager → User</li>
+                        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Giao việc đa phụ trách</li>
+                        <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Thông báo khi được giao việc</li>
+                    </ul>
+                </div>
+                <div class="lp-show-art">
+                    <div class="lp-panel">
+                        <div class="lp-panel-title">Thành viên dự án</div>
+                        <div class="lp-mem"><span class="avatar avatar-c0">PK</span><span class="lp-mem-name">Phan Anh Khoa</span><span class="tag tag-doing plain">Admin</span></div>
+                        <div class="lp-mem"><span class="avatar avatar-c1">LQ</span><span class="lp-mem-name">Lê Minh Quân</span><span class="tag tag-medium plain">Manager</span></div>
+                        <div class="lp-mem"><span class="avatar avatar-c3">VM</span><span class="lp-mem-name">Võ Thị Mai</span><span class="tag tag-todo plain">User</span></div>
+                        <div class="lp-panel-foot">
+                            <span>Đa phụ trách</span>
+                            <span class="avatar-stack">
+                                <span class="avatar avatar-c2">TĐ</span>
+                                <span class="avatar avatar-c4">BH</span>
+                                <span class="avatar avatar-c5">HN</span>
+                                <span class="avatar avatar-more">+2</span>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -127,8 +247,9 @@
     <section id="how" class="lp-section lp-section-alt">
         <div class="lp-container">
             <div class="lp-section-head">
-                <h2>Bắt đầu trong 3 bước</h2>
-                <p>Không cần cài đặt — đăng ký và dùng ngay trên trình duyệt.</p>
+                <span class="lp-tag">BẮT ĐẦU NHANH</span>
+                <h2>Vận hành chỉ trong 3 bước</h2>
+                <p>Không cần cài đặt, không cấu hình phức tạp — đăng ký và bắt đầu ngay trên trình duyệt.</p>
             </div>
             <div class="lp-steps">
                 <div class="lp-step">
@@ -138,52 +259,130 @@
                 </div>
                 <div class="lp-step">
                     <div class="lp-step-no">2</div>
-                    <h3>Lập workspace &amp; project</h3>
-                    <p>Tạo không gian làm việc, thêm thành viên và mở các project.</p>
+                    <h3>Lập workspace &amp; dự án</h3>
+                    <p>Tạo không gian làm việc, mời thành viên và mở các dự án.</p>
                 </div>
                 <div class="lp-step">
                     <div class="lp-step-no">3</div>
                     <h3>Giao việc &amp; theo dõi</h3>
-                    <p>Thêm task, kéo–thả trên Kanban và xem tiến độ trên lịch.</p>
+                    <p>Thêm công việc, kéo–thả trên Kanban và nắm tiến độ trên lịch.</p>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Lời chứng thực -->
+    <section class="lp-section">
+        <div class="lp-container">
+            <div class="lp-section-head">
+                <span class="lp-tag">KHÁCH HÀNG</span>
+                <h2>Đội ngũ làm việc hiệu quả hơn với Cetee</h2>
+                <p>Những chia sẻ từ người dùng đã đưa cả nhóm về cùng một nhịp.</p>
+            </div>
+            <div class="lp-quotes">
+                <figure class="lp-quote">
+                    <blockquote>“Cả nhóm cuối cùng đã nhìn chung một bức tranh — việc gì đang làm, ai phụ trách và bao giờ xong đều rõ ràng.”</blockquote>
+                    <figcaption><span class="avatar avatar-c0">TT</span><div><b>Thu Trang</b><small>Trưởng nhóm Sản phẩm</small></div></figcaption>
+                </figure>
+                <figure class="lp-quote">
+                    <blockquote>“Lịch Tuần và Tháng giúp tôi biết chính xác dự án còn bao nhiêu việc và đang chậm ở khâu nào.”</blockquote>
+                    <figcaption><span class="avatar avatar-c3">MQ</span><div><b>Minh Quân</b><small>Quản lý Dự án</small></div></figcaption>
+                </figure>
+                <figure class="lp-quote">
+                    <blockquote>“Thiết lập trong vài phút, không cần đào tạo. Nhân viên mới bắt nhịp công việc gần như ngay lập tức.”</blockquote>
+                    <figcaption><span class="avatar avatar-c1">BC</span><div><b>Bảo Châu</b><small>Chủ doanh nghiệp</small></div></figcaption>
+                </figure>
             </div>
         </div>
     </section>
 
     <!-- Vì sao -->
     <section id="why" class="lp-section">
-        <div class="lp-container lp-why">
-            <div>
-                <h2>Gọn gàng cho cá nhân, đủ mạnh cho công ty</h2>
-                <p>Người dùng cá nhân có không gian riêng tối giản; doanh nghiệp có phân cấp,
-                    quản lý thành viên và báo cáo tiến độ — tất cả trong cùng một nền tảng.</p>
-                <a class="btn btn-primary btn-lg" asp-controller="Account" asp-action="Register">Dùng thử miễn phí</a>
+        <div class="lp-container">
+            <div class="lp-why-panel">
+                <div class="lp-why-glow" aria-hidden="true"></div>
+                <div class="lp-why-copy">
+                    <span class="lp-tag light">VÌ SAO CETEE</span>
+                    <h2>Gọn cho cá nhân. Đủ mạnh cho doanh nghiệp.</h2>
+                    <p>Cá nhân có không gian riêng tối giản để tập trung; doanh nghiệp có phân cấp,
+                        quản lý thành viên và báo cáo tiến độ — tất cả trên cùng một nền tảng.</p>
+                    <a class="btn btn-lg lp-btn-light" asp-controller="Account" asp-action="Register">Tạo tài khoản miễn phí</a>
+                </div>
+                <ul class="lp-checklist">
+                    <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Phân cấp 4 tầng, mỗi cấp quản lý đúng phạm vi</li>
+                    <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Kanban kéo–thả &amp; lịch Ngày / Tuần / Tháng</li>
+                    <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Giao việc đa phụ trách &amp; thông báo tức thì</li>
+                    <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Đăng nhập Google &amp; khôi phục mật khẩu bằng OTP</li>
+                </ul>
             </div>
-            <div class="lp-why-stats">
-                <div class="lp-stat"><span class="n">4</span><span class="l">cấp phân quyền</span></div>
-                <div class="lp-stat"><span class="n">3</span><span class="l">chế độ lịch</span></div>
-                <div class="lp-stat"><span class="n">∞</span><span class="l">project &amp; task</span></div>
-                <div class="lp-stat"><span class="n">100%</span><span class="l">trên trình duyệt</span></div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="lp-section lp-section-alt">
+        <div class="lp-container lp-faq-wrap">
+            <div class="lp-section-head">
+                <span class="lp-tag">GIẢI ĐÁP</span>
+                <h2>Câu hỏi thường gặp</h2>
+            </div>
+            <div class="lp-faq">
+                <details class="lp-faq-item">
+                    <summary>Cetee có miễn phí không?<span class="lp-faq-ic"></span></summary>
+                    <p>Có. Bạn có thể đăng ký và sử dụng miễn phí ngay trên trình duyệt, không cần thẻ tín dụng.</p>
+                </details>
+                <details class="lp-faq-item">
+                    <summary>Tôi dùng cho mục đích cá nhân được không?<span class="lp-faq-ic"></span></summary>
+                    <p>Được. Tài khoản cá nhân có một không gian riêng tối giản để tự quản lý công việc, tách biệt với cơ cấu công ty.</p>
+                </details>
+                <details class="lp-faq-item">
+                    <summary>Cetee phù hợp với công ty quy mô nào?<span class="lp-faq-ic"></span></summary>
+                    <p>Mọi quy mô. Mô hình phân cấp 4 tầng (Super Admin → Admin → Manager → User) giúp mỗi cấp chỉ quản lý đúng phạm vi đội của mình.</p>
+                </details>
+                <details class="lp-faq-item">
+                    <summary>Dữ liệu và tài khoản có an toàn không?<span class="lp-faq-ic"></span></summary>
+                    <p>Có. Cetee hỗ trợ đăng nhập Google và khôi phục mật khẩu an toàn bằng mã OTP gửi qua email.</p>
+                </details>
+                <details class="lp-faq-item">
+                    <summary>Có cần cài đặt phần mềm không?<span class="lp-faq-ic"></span></summary>
+                    <p>Không. Cetee chạy 100% trên trình duyệt — chỉ cần đăng ký và bắt đầu.</p>
+                </details>
             </div>
         </div>
     </section>
 
     <!-- CTA -->
     <section class="lp-cta">
+        <div class="lp-cta-glow" aria-hidden="true"></div>
         <div class="lp-container lp-cta-inner">
-            <h2>Sẵn sàng tổ chức công việc tốt hơn?</h2>
+            <h2>Sẵn sàng nâng tầm cách đội ngũ làm việc?</h2>
             <p>Tạo tài khoản miễn phí và mời cả nhóm cùng tham gia ngay hôm nay.</p>
             <div class="lp-hero-cta">
-                <a class="btn btn-lg lp-btn-light" asp-controller="Account" asp-action="Register">Đăng ký miễn phí</a>
+                <a class="btn btn-lg lp-btn-light" asp-controller="Account" asp-action="Register">Bắt đầu miễn phí</a>
                 <a class="btn btn-lg lp-btn-ghost" asp-controller="Account" asp-action="Login">Đăng nhập</a>
             </div>
         </div>
     </section>
 
     <footer class="lp-footer">
-        <div class="lp-container lp-footer-inner">
-            <div class="lp-brand"><span class="brand-logo">C</span> Cetee</div>
-            <p>© @DateTime.Now.Year Cetee — Đồ án Quản lý công việc. Xây dựng bằng ASP.NET Core MVC.</p>
+        <div class="lp-container lp-footer-grid">
+            <div class="lp-footer-brand">
+                <div class="lp-brand"><span class="brand-logo">C</span> Cetee</div>
+                <p>Nền tảng quản lý công việc nhóm — gọn gàng, rõ ràng và hiệu quả.</p>
+            </div>
+            <div class="lp-footer-col">
+                <h4>Sản phẩm</h4>
+                <a href="#features">Tính năng</a>
+                <a href="#how">Cách hoạt động</a>
+                <a href="#why">Vì sao Cetee</a>
+            </div>
+            <div class="lp-footer-col">
+                <h4>Tài khoản</h4>
+                <a asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                <a asp-controller="Account" asp-action="Register">Đăng ký</a>
+            </div>
+        </div>
+        <div class="lp-container lp-footer-bottom">
+            © @DateTime.Now.Year Cetee — Đồ án Quản lý công việc. Xây dựng bằng ASP.NET Core MVC.
         </div>
     </footer>
 
