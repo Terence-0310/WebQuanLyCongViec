@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Cetee.Data;
@@ -75,7 +76,18 @@ builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 
 builder.Services.AddControllersWithViews();
 
+// Khi chạy sau reverse proxy (nginx/Cloudflare): tin header X-Forwarded-Proto/For
+// để app biết request gốc là HTTPS (cần cho redirect URI Google OAuth, cookie Secure...).
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear(); // chỉ nginx (localhost) kết nối tới Kestrel nên tin mọi proxy
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 // --- Áp dụng migration và seed dữ liệu mẫu khi khởi động ---
 using (var scope = app.Services.CreateScope())
