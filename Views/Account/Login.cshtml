@@ -14,7 +14,7 @@
 <body>
 <div class="auth-wrap">
     <div class="auth-card">
-        <div class="auth-brand"><span class="brand-logo">C</span> Cetee</div>
+        <a asp-controller="Home" asp-action="Index" class="auth-brand" style="text-decoration:none;color:inherit;"><span class="brand-logo">C</span> Cetee</a>
         <div class="auth-sub">Quản lý công việc dự án</div>
 
         @if (TempData["Info"] is string info)
@@ -53,6 +53,9 @@
         </div>
         <div class="auth-alt">
             Chưa có tài khoản? <a asp-action="Register">Đăng ký</a>
+        </div>
+        <div class="auth-alt">
+            <a asp-controller="Home" asp-action="Index">← Về trang chủ</a>
         </div>
     </div>
 </div>

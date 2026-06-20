@@ -14,7 +14,7 @@
 <body>
 <div class="auth-wrap">
     <div class="auth-card">
-        <div class="auth-brand"><span class="brand-logo">C</span> Cetee</div>
+        <a asp-controller="Home" asp-action="Index" class="auth-brand" style="text-decoration:none;color:inherit;"><span class="brand-logo">C</span> Cetee</a>
         <div class="auth-sub">Tạo tài khoản mới</div>
 
         <form asp-action="Register" method="post">
@@ -49,6 +49,9 @@
 
         <div class="auth-alt">
             Đã có tài khoản? <a asp-action="Login">Đăng nhập</a>
+        </div>
+        <div class="auth-alt">
+            <a asp-controller="Home" asp-action="Index">← Về trang chủ</a>
         </div>
     </div>
 </div>
