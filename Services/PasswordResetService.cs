@@ -67,7 +67,16 @@ public class PasswordResetService : IPasswordResetService
         });
         await _db.SaveChangesAsync();
 
-        await _email.SendOtpAsync(user.Email!, user.FullName, otp, OtpMinutes);
+        // Gửi email OTP. Nếu SMTP lỗi (sai cấu hình/hết hạn app password) thì chỉ ghi log,
+        // KHÔNG để request sập — vừa an toàn (im lặng chống dò tài khoản) vừa bền bỉ.
+        try
+        {
+            await _email.SendOtpAsync(user.Email!, user.FullName, otp, OtpMinutes);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Không gửi được email OTP tới {Email} — kiểm tra cấu hình SMTP (Email:User/Password).", user.Email);
+        }
     }
 
     public async Task<(bool Ok, string? Error, string? Token)> VerifyOtpAsync(string email, string code)

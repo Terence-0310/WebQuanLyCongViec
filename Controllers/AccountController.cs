@@ -74,6 +74,20 @@ public class AccountController : Controller
         return View(model);
     }
 
+    // Dùng thử miễn phí: tạo tài khoản dùng thử + dữ liệu mẫu rồi đăng nhập luôn (1 chạm).
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Trial()
+    {
+        if (User.Identity?.IsAuthenticated == true)
+            return RedirectToAction("Index", "Home");
+
+        var user = await _auth.CreateTrialAsync();
+        await _signInManager.SignInAsync(user, isPersistent: true);
+        TempData["Success"] = "Chào mừng đến với bản dùng thử Cetee! Một workspace mẫu đã được tạo sẵn để bạn khám phá.";
+        return RedirectToAction("Index", "Workspaces");
+    }
+
     [HttpGet]
     public IActionResult Register()
     {

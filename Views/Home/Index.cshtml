@@ -13,12 +13,6 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="lp">
-    <!-- Thanh thông báo -->
-    <div class="lp-announce">
-        <span class="lp-announce-pill">MỚI</span>
-        Lịch Tuần &amp; Tháng — theo dõi tiến độ toàn dự án chỉ trong một màn hình.
-    </div>
-
     <!-- Thanh điều hướng -->
     <header class="lp-nav">
         <div class="lp-container lp-nav-inner">
@@ -32,7 +26,7 @@
             </nav>
             <div class="lp-nav-actions">
                 <a class="btn btn-ghost" asp-controller="Account" asp-action="Login">Đăng nhập</a>
-                <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Dùng thử miễn phí</a>
+                <a class="btn btn-primary" href="#" data-trial>Dùng thử miễn phí</a>
             </div>
         </div>
     </header>
@@ -47,7 +41,7 @@
                 <p>Cetee hợp nhất workspace, dự án, bảng Kanban và lịch tiến độ vào một nền tảng duy nhất —
                     để cả đội luôn biết việc gì cần làm, ai phụ trách và khi nào hoàn thành.</p>
                 <div class="lp-hero-cta">
-                    <a class="btn btn-primary btn-lg" asp-controller="Account" asp-action="Register">Dùng thử miễn phí</a>
+                    <a class="btn btn-primary btn-lg" href="#" data-trial>Dùng thử miễn phí</a>
                     <a class="btn btn-secondary btn-lg" href="#features">Khám phá tính năng</a>
                 </div>
                 <div class="lp-trust">
@@ -306,7 +300,7 @@
                     <h2>Gọn cho cá nhân. Đủ mạnh cho doanh nghiệp.</h2>
                     <p>Cá nhân có không gian riêng tối giản để tập trung; doanh nghiệp có phân cấp,
                         quản lý thành viên và báo cáo tiến độ — tất cả trên cùng một nền tảng.</p>
-                    <a class="btn btn-lg lp-btn-light" asp-controller="Account" asp-action="Register">Tạo tài khoản miễn phí</a>
+                    <a class="btn btn-lg lp-btn-light" href="#" data-trial>Dùng thử miễn phí</a>
                 </div>
                 <ul class="lp-checklist">
                     <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Phân cấp 4 tầng, mỗi cấp quản lý đúng phạm vi</li>
@@ -357,7 +351,7 @@
             <h2>Sẵn sàng nâng tầm cách đội ngũ làm việc?</h2>
             <p>Tạo tài khoản miễn phí và mời cả nhóm cùng tham gia ngay hôm nay.</p>
             <div class="lp-hero-cta">
-                <a class="btn btn-lg lp-btn-light" asp-controller="Account" asp-action="Register">Bắt đầu miễn phí</a>
+                <a class="btn btn-lg lp-btn-light" href="#" data-trial>Dùng thử miễn phí</a>
                 <a class="btn btn-lg lp-btn-ghost" asp-controller="Account" asp-action="Login">Đăng nhập</a>
             </div>
         </div>
@@ -380,9 +374,6 @@
                 <a asp-controller="Account" asp-action="Login">Đăng nhập</a>
                 <a asp-controller="Account" asp-action="Register">Đăng ký</a>
             </div>
-        </div>
-        <div class="lp-container lp-footer-bottom">
-            © @DateTime.Now.Year Cetee — Đồ án Quản lý công việc. Xây dựng bằng ASP.NET Core MVC.
         </div>
     </footer>
 
@@ -469,6 +460,11 @@
         </div>
     </div>
 
+    <!-- Form ẩn cho "Dùng thử miễn phí" (1 chạm: tạo tài khoản dùng thử + đăng nhập) -->
+    <form id="trialForm" method="post" asp-controller="Account" asp-action="Trial" hidden>
+        @Html.AntiForgeryToken()
+    </form>
+
     <script>
         (function () {
             const body = document.body;
@@ -531,6 +527,16 @@
             }
             wire('loginForm', 'loginErr');
             wire('registerForm', 'registerErr');
+
+            // Dùng thử miễn phí: 1 chạm -> submit form ẩn (tạo tài khoản dùng thử + đăng nhập)
+            var trialForm = document.getElementById('trialForm');
+            document.querySelectorAll('[data-trial]').forEach(function (b) {
+                b.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    b.classList.add('is-loading');
+                    if (trialForm) trialForm.submit();
+                });
+            });
         })();
     </script>
 </body>

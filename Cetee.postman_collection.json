@@ -1,0 +1,451 @@
+{
+  "info": {
+    "name": "Cetee - Demo Test Full (ASP.NET Core MVC)",
+    "description": "Bộ kịch bản test end-to-end cho dự án Cetee.\n\nLưu ý: Cetee là ứng dụng ASP.NET Core MVC dùng Cookie Identity + Antiforgery token, KHÔNG phải REST API thuần. Vì vậy collection này:\n- Dùng Cookie jar của Postman (tự lưu cookie đăng nhập giữa các request).\n- Mỗi request POST có pre-request script tự lấy __RequestVerificationToken từ trang form tương ứng rồi gửi kèm.\n- Đăng nhập/Đăng ký gọi qua endpoint AJAX (header X-Requested-With) nên trả JSON.\n- Các lệnh tạo (workspace/project/task) tắt follow-redirect để bắt Id từ header Location.\n\nCÁCH CHẠY: bật Cookie jar (mặc định bật), đặt biến baseUrl đúng cổng, rồi Run Collection theo thứ tự thư mục 1 -> 7.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5259" },
+    { "key": "adminEmail", "value": "admin@example.com" },
+    { "key": "adminPassword", "value": "Admin@123" },
+    { "key": "aft", "value": "" },
+    { "key": "workspaceId", "value": "" },
+    { "key": "projectId", "value": "" },
+    { "key": "taskId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Login (Admin) - AJAX JSON",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Lấy antiforgery token từ trang đăng nhập (đồng thời set cookie antiforgery)",
+                  "var base = pm.variables.get('baseUrl');",
+                  "pm.sendRequest({ url: base + '/Account/Login', method: 'GET' }, function (e, r) {",
+                  "  if (!e && r) {",
+                  "    var m = r.text().match(/name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"/);",
+                  "    if (m) pm.collectionVariables.set('aft', m[1]);",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "var j = pm.response.json();",
+                  "pm.test('Đăng nhập thành công (ok=true)', function () { pm.expect(j.ok).to.eql(true); });",
+                  "pm.test('Có URL chuyển hướng', function () { pm.expect(j.redirect).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Requested-With", "value": "XMLHttpRequest" },
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "Email", "value": "{{adminEmail}}" },
+                { "key": "Password", "value": "{{adminPassword}}" },
+                { "key": "__RequestVerificationToken", "value": "{{aft}}" }
+              ]
+            },
+            "url": "{{baseUrl}}/Account/Login",
+            "description": "Đăng nhập SuperAdmin qua AJAX (trả JSON). Cookie phiên được lưu vào cookie jar dùng cho các request sau."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Dashboard",
+      "item": [
+        {
+          "name": "GET Dashboard",
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Status 200 (đã đăng nhập)', function () { pm.response.to.have.status(200); });"
+            ] } }
+          ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/Dashboard" }
+        }
+      ]
+    },
+    {
+      "name": "3. Workspaces",
+      "item": [
+        {
+          "name": "GET danh sách Workspaces",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });"
+          ] } } ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/Workspaces" }
+        },
+        {
+          "name": "POST Tạo Workspace",
+          "protocolProfileBehavior": { "followRedirects": false },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "var base = pm.variables.get('baseUrl');",
+              "pm.sendRequest({ url: base + '/Workspaces/Create', method: 'GET' }, function (e, r) {",
+              "  if (!e && r) { var m = r.text().match(/name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"/); if (m) pm.collectionVariables.set('aft', m[1]); }",
+              "});"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Tạo thành công -> redirect 302', function () { pm.expect(pm.response.code).to.be.oneOf([301, 302]); });",
+              "var loc = pm.response.headers.get('Location') || '';",
+              "var m = loc.match(/(\\d+)\\/?$/);",
+              "if (m) pm.collectionVariables.set('workspaceId', m[1]);",
+              "pm.test('Bắt được workspaceId', function () { pm.expect(pm.collectionVariables.get('workspaceId')).to.match(/\\d+/); });"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/x-www-form-urlencoded" } ],
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "Name", "value": "Workspace Demo (Postman)" },
+              { "key": "Description", "value": "Tạo từ Postman để test" },
+              { "key": "__RequestVerificationToken", "value": "{{aft}}" }
+            ] },
+            "url": "{{baseUrl}}/Workspaces/Create"
+          }
+        },
+        {
+          "name": "GET Chi tiết Workspace",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });"
+          ] } } ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/Workspaces/Details/{{workspaceId}}" }
+        }
+      ]
+    },
+    {
+      "name": "4. Projects",
+      "item": [
+        {
+          "name": "POST Tạo Project",
+          "protocolProfileBehavior": { "followRedirects": false },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "var base = pm.variables.get('baseUrl');",
+              "var ws = pm.collectionVariables.get('workspaceId');",
+              "pm.sendRequest({ url: base + '/Projects/Create?workspaceId=' + ws, method: 'GET' }, function (e, r) {",
+              "  if (!e && r) { var m = r.text().match(/name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"/); if (m) pm.collectionVariables.set('aft', m[1]); }",
+              "});"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Tạo thành công -> redirect 302', function () { pm.expect(pm.response.code).to.be.oneOf([301, 302]); });",
+              "var loc = pm.response.headers.get('Location') || '';",
+              "var m = loc.match(/(\\d+)\\/?$/);",
+              "if (m) pm.collectionVariables.set('projectId', m[1]);",
+              "pm.test('Bắt được projectId', function () { pm.expect(pm.collectionVariables.get('projectId')).to.match(/\\d+/); });"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/x-www-form-urlencoded" } ],
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "Name", "value": "Project Demo (Postman)" },
+              { "key": "Description", "value": "Project test API" },
+              { "key": "WorkspaceId", "value": "{{workspaceId}}" },
+              { "key": "__RequestVerificationToken", "value": "{{aft}}" }
+            ] },
+            "url": "{{baseUrl}}/Projects/Create"
+          }
+        },
+        {
+          "name": "GET Chi tiết Project",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });"
+          ] } } ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/Projects/Details/{{projectId}}" }
+        }
+      ]
+    },
+    {
+      "name": "5. Tasks",
+      "item": [
+        {
+          "name": "POST Tạo Task",
+          "protocolProfileBehavior": { "followRedirects": false },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "var base = pm.variables.get('baseUrl');",
+              "var p = pm.collectionVariables.get('projectId');",
+              "pm.sendRequest({ url: base + '/Tasks/Create?projectId=' + p, method: 'GET' }, function (e, r) {",
+              "  if (!e && r) { var m = r.text().match(/name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"/); if (m) pm.collectionVariables.set('aft', m[1]); }",
+              "});"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Tạo thành công -> redirect 302', function () { pm.expect(pm.response.code).to.be.oneOf([301, 302]); });",
+              "var loc = pm.response.headers.get('Location') || '';",
+              "var m = loc.match(/(\\d+)\\/?$/);",
+              "if (m) pm.collectionVariables.set('taskId', m[1]);",
+              "pm.test('Bắt được taskId', function () { pm.expect(pm.collectionVariables.get('taskId')).to.match(/\\d+/); });"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/x-www-form-urlencoded" } ],
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "Title", "value": "Task Demo (Postman)" },
+              { "key": "Description", "value": "Task test API" },
+              { "key": "ProjectId", "value": "{{projectId}}" },
+              { "key": "Priority", "value": "1" },
+              { "key": "Status", "value": "0" },
+              { "key": "DurationMinutes", "value": "60" },
+              { "key": "__RequestVerificationToken", "value": "{{aft}}" }
+            ] },
+            "url": "{{baseUrl}}/Tasks/Create",
+            "description": "Priority: 0=Thấp,1=TB,2=Cao | Status: 0=Cần làm,1=Đang làm,2=Hoàn thành."
+          }
+        },
+        {
+          "name": "GET Chi tiết Task",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });"
+          ] } } ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/Tasks/Details/{{taskId}}" }
+        },
+        {
+          "name": "POST Xếp lịch Task (Schedule) - AJAX JSON",
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "var base = pm.variables.get('baseUrl');",
+              "pm.sendRequest({ url: base + '/Tasks/Timeline', method: 'GET' }, function (e, r) {",
+              "  if (!e && r) { var m = r.text().match(/name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"/); if (m) pm.collectionVariables.set('aft', m[1]); }",
+              "});",
+              "// Giờ bắt đầu = hôm nay 09:00",
+              "var d = new Date(); var iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + 'T09:00';",
+              "pm.collectionVariables.set('scheduleStart', iso);"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "var j = pm.response.json();",
+              "pm.test('Xếp lịch ok=true', function () { pm.expect(j.ok).to.eql(true); });"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "X-Requested-With", "value": "XMLHttpRequest" }, { "key": "Content-Type", "value": "application/x-www-form-urlencoded" } ],
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "id", "value": "{{taskId}}" },
+              { "key": "start", "value": "{{scheduleStart}}" },
+              { "key": "duration", "value": "90" },
+              { "key": "__RequestVerificationToken", "value": "{{aft}}" }
+            ] },
+            "url": "{{baseUrl}}/Tasks/Schedule"
+          }
+        },
+        {
+          "name": "POST Đổi trạng thái Task (ChangeStatus)",
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "var base = pm.variables.get('baseUrl');",
+              "pm.sendRequest({ url: base + '/Tasks/Board', method: 'GET' }, function (e, r) {",
+              "  if (!e && r) { var m = r.text().match(/name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"/); if (m) pm.collectionVariables.set('aft', m[1]); }",
+              "});"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Đổi trạng thái OK (200/302)', function () { pm.expect(pm.response.code).to.be.oneOf([200, 302]); });"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/x-www-form-urlencoded" } ],
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "id", "value": "{{taskId}}" },
+              { "key": "status", "value": "1" },
+              { "key": "__RequestVerificationToken", "value": "{{aft}}" }
+            ] },
+            "url": "{{baseUrl}}/Tasks/ChangeStatus"
+          }
+        },
+        {
+          "name": "GET Danh sách Task (List)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', function(){ pm.response.to.have.status(200); });" ] } } ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/Tasks" }
+        },
+        {
+          "name": "GET Kanban (Board)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', function(){ pm.response.to.have.status(200); });" ] } } ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/Tasks/Board" }
+        },
+        {
+          "name": "GET Lịch Ngày (Timeline)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', function(){ pm.response.to.have.status(200); });" ] } } ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/Tasks/Timeline" }
+        },
+        {
+          "name": "GET Lịch Tuần (Week)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', function(){ pm.response.to.have.status(200); });" ] } } ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/Tasks/Week" }
+        },
+        {
+          "name": "GET Lịch Tháng (Month)",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', function(){ pm.response.to.have.status(200); });" ] } } ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/Tasks/Month" }
+        }
+      ]
+    },
+    {
+      "name": "6. Users (Admin)",
+      "item": [
+        {
+          "name": "GET Quản lý người dùng",
+          "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": [ "pm.test('200', function(){ pm.response.to.have.status(200); });" ] } } ],
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/Users" }
+        },
+        {
+          "name": "POST Tạo nhân viên (User)",
+          "protocolProfileBehavior": { "followRedirects": false },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "var base = pm.variables.get('baseUrl');",
+              "pm.sendRequest({ url: base + '/Users/Create', method: 'GET' }, function (e, r) {",
+              "  if (!e && r) { var m = r.text().match(/name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"/); if (m) pm.collectionVariables.set('aft', m[1]); }",
+              "});",
+              "pm.collectionVariables.set('newEmail', 'nv_' + Date.now() + '@cetee.test');"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Tạo nhân viên OK (302 về danh sách)', function () { pm.expect(pm.response.code).to.be.oneOf([200, 302]); });"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/x-www-form-urlencoded" } ],
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "FullName", "value": "Nhân viên Postman" },
+              { "key": "Email", "value": "{{newEmail}}" },
+              { "key": "Password", "value": "User@123" },
+              { "key": "Role", "value": "User" },
+              { "key": "__RequestVerificationToken", "value": "{{aft}}" }
+            ] },
+            "url": "{{baseUrl}}/Users/Create",
+            "description": "Role hợp lệ tùy cấp người tạo: SuperAdmin gán được Admin/Manager/User."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Tài khoản khác (chạy cuối)",
+      "description": "Các request này thay đổi phiên đăng nhập (đăng ký = đăng nhập user mới, đăng xuất). Để cuối để không ảnh hưởng các bước trên.",
+      "item": [
+        {
+          "name": "POST Dùng thử miễn phí (Trial 1 chạm)",
+          "protocolProfileBehavior": { "followRedirects": false },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "// Xoá cookie để chạy ở trạng thái CHƯA đăng nhập (Trial dành cho khách), rồi lấy token từ trang chủ.",
+              "var base = pm.variables.get('baseUrl');",
+              "function fetchToken(){ pm.sendRequest({ url: base + '/', method: 'GET' }, function (e, r) { if (!e && r) { var m = r.text().match(/name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"/); if (m) pm.collectionVariables.set('aft', m[1]); } }); }",
+              "try { pm.cookies.jar().clear(base, function () { fetchToken(); }); } catch (err) { fetchToken(); }"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Trial -> redirect 302', function () { pm.expect(pm.response.code).to.be.oneOf([301, 302]); });",
+              "var loc = pm.response.headers.get('Location') || '';",
+              "pm.test('Tạo tài khoản dùng thử & vào Workspaces', function () { pm.expect(loc).to.include('/Workspaces'); });"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/x-www-form-urlencoded" } ],
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "__RequestVerificationToken", "value": "{{aft}}" }
+            ] },
+            "url": "{{baseUrl}}/Account/Trial",
+            "description": "Tạo tài khoản dùng thử (cá nhân) + dữ liệu mẫu rồi tự đăng nhập. Nên chạy khi CHƯA đăng nhập — pre-request tự xoá cookie để mô phỏng khách vãng lai. Sau request này, phiên hiện tại là tài khoản dùng thử."
+          }
+        },
+        {
+          "name": "POST Đăng ký tài khoản mới - AJAX JSON",
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "var base = pm.variables.get('baseUrl');",
+              "pm.sendRequest({ url: base + '/Account/Register', method: 'GET' }, function (e, r) {",
+              "  if (!e && r) { var m = r.text().match(/name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"/); if (m) pm.collectionVariables.set('aft', m[1]); }",
+              "});",
+              "pm.collectionVariables.set('regEmail', 'canhan_' + Date.now() + '@cetee.test');"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "var j = pm.response.json();",
+              "pm.test('Đăng ký ok=true', function () { pm.expect(j.ok).to.eql(true); });"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "X-Requested-With", "value": "XMLHttpRequest" }, { "key": "Content-Type", "value": "application/x-www-form-urlencoded" } ],
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "FullName", "value": "Người dùng mới" },
+              { "key": "Email", "value": "{{regEmail}}" },
+              { "key": "Password", "value": "User@123" },
+              { "key": "ConfirmPassword", "value": "User@123" },
+              { "key": "__RequestVerificationToken", "value": "{{aft}}" }
+            ] },
+            "url": "{{baseUrl}}/Account/Register",
+            "description": "Tạo tài khoản cá nhân mới và tự đăng nhập (đổi cookie phiên sang user này)."
+          }
+        },
+        {
+          "name": "POST Quên mật khẩu (gửi OTP)",
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "var base = pm.variables.get('baseUrl');",
+              "pm.sendRequest({ url: base + '/Account/ForgotPassword', method: 'GET' }, function (e, r) {",
+              "  if (!e && r) { var m = r.text().match(/name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"/); if (m) pm.collectionVariables.set('aft', m[1]); }",
+              "});"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Chuyển sang bước nhập OTP (200/302)', function () { pm.expect(pm.response.code).to.be.oneOf([200, 302]); });"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/x-www-form-urlencoded" } ],
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "Email", "value": "{{adminEmail}}" },
+              { "key": "__RequestVerificationToken", "value": "{{aft}}" }
+            ] },
+            "url": "{{baseUrl}}/Account/ForgotPassword",
+            "description": "Gửi mã OTP về email (cần cấu hình SMTP trong appsettings.Development.json). Nếu email không tồn tại hệ thống vẫn trả về im lặng để chống dò tài khoản."
+          }
+        },
+        {
+          "name": "POST Đăng xuất",
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "var base = pm.variables.get('baseUrl');",
+              "pm.sendRequest({ url: base + '/Workspaces', method: 'GET' }, function (e, r) {",
+              "  if (!e && r) { var m = r.text().match(/name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"/); if (m) pm.collectionVariables.set('aft', m[1]); }",
+              "});"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Đăng xuất OK (200/302)', function () { pm.expect(pm.response.code).to.be.oneOf([200, 302]); });"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/x-www-form-urlencoded" } ],
+            "body": { "mode": "urlencoded", "urlencoded": [
+              { "key": "__RequestVerificationToken", "value": "{{aft}}" }
+            ] },
+            "url": "{{baseUrl}}/Account/Logout"
+          }
+        }
+      ]
+    }
+  ]
+}
