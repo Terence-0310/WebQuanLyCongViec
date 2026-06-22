@@ -159,3 +159,42 @@ Mở: **https://github.com/Terence-0310/WebQuanLyCongViec**
 - [ ] Mở sẵn tab GitHub repo + tab Contributors.
 - [ ] Chuẩn bị 1 cửa sổ ẩn danh để demo vai trò User (phân quyền).
 - [ ] (Nếu demo OTP) Mở sẵn hộp thư Gmail để cho thấy email nhận được.
+
+---
+
+# 🎥 KỊCH BẢN QUAY VIDEO DEMO (storyboard ~6–7 phút)
+
+> Dùng để **quay màn hình + lồng tiếng**. Mỗi cảnh gồm: thời lượng, **hình ảnh trên màn hình** (quay gì) và **lời thoại** (đọc gì). Đọc thoại chậm, rõ; di chuột chậm để người xem theo kịp.
+
+## 🎬 Chuẩn bị quay (làm 1 lần trước khi bấm Record)
+- **Công cụ:** OBS Studio / Game Bar (Win+G) / Loom. Quay **1080p**, 30fps.
+- **Trình duyệt:** phóng to **125–135%** (Ctrl + +) cho chữ to, dễ đọc; ẩn bookmark bar; đóng tab thừa.
+- **Dọn màn hình:** ẩn icon desktop, tắt thông báo (chế độ Focus), micro rõ, phòng yên tĩnh.
+- **Mở sẵn các tab theo thứ tự:** (1) `cetee.cloud` · (2) Postman · (3) GitHub repo · (4) Gmail (nếu quay OTP).
+- **Đăng nhập sẵn** `admin@example.com` ở 1 tab; chuẩn bị 1 cửa sổ ẩn danh cho vai trò User.
+- Tập đọc thoại 1 lượt trước khi quay thật.
+
+## 📋 Bảng phân cảnh
+
+| # | Thời lượng | 🎥 Hình ảnh trên màn hình | 🗣️ Lời thoại (voiceover) |
+|---|---|---|---|
+| 1 | 0:00–0:35 | Mở `cetee.cloud` (chưa đăng nhập), cuộn nhẹ landing; bấm logo. | "Xin chào, đây là **Cetee** — hệ thống quản lý công việc nhóm, đã triển khai thật tại **cetee.cloud** với HTTPS. Đây là trang giới thiệu cho người dùng mới. Bấm logo ở bất kỳ đâu đều quay về trang chủ." |
+| 2 | 0:35–1:05 | Bấm **Đăng nhập** → nhập `admin@example.com` / `Admin@123` → vào ứng dụng. | "Hệ thống có đăng ký, đăng nhập và **dùng thử một chạm**. Mình đăng nhập bằng tài khoản quản trị để xem đầy đủ tính năng." |
+| 3 | 1:05–2:05 | Workspaces → mở 1 workspace → mở 1 project → bảng **Kanban**. Tạo 1 task, **kéo–thả** đổi cột. | "Tổ chức gồm ba cấp: **Workspace** chứa **Dự án**, dự án chứa **Công việc**. Công việc quản lý bằng bảng **Kanban** — kéo–thả để đổi trạng thái từ Cần làm sang Đang làm, Hoàn thành." |
+| 4 | 2:05–2:30 | Mở 1 task có nhiều người, chỉ vào danh sách người phụ trách. | "Sát thực tế: một việc có thể giao **nhiều người cùng phụ trách**, đúng cách các đội nhóm phối hợp." |
+| 5 | 2:30–3:20 | Vào **Lịch**: chuyển **Ngày → Tuần → Tháng**, chỉ vào thanh tiến độ và ô hôm nay. | "Tiến độ được nhìn theo thời gian với **lịch ngày, tuần và tháng**. Phía trên là thống kê việc đã lên lịch, đã hoàn thành và phần trăm tiến độ — phục vụ theo dõi và đếm công." |
+| 6 | 3:20–4:10 | Menu **Người dùng**: đổi vai trò 1 người → chỉ **toast** góc phải; bấm **Xóa** → chỉ **hộp xác nhận** (rồi Hủy). (Tuỳ chọn: cửa sổ ẩn danh đăng nhập User để so sánh menu.) | "Hệ thống phân **4 vai trò: SuperAdmin, Admin, Manager, User**, mỗi vai trò thao tác đúng phạm vi. Quản trị viên quản lý người dùng; mọi thao tác xóa đều có **xác nhận**, và phản hồi bằng **thông báo toast** rõ ràng." |
+| 7 | 4:10–4:45 | Đăng xuất → **Quên mật khẩu** → nhập email → mở Gmail cho thấy **OTP thật**. (Nhắc nhanh: có **đăng nhập Google**.) | "Quên mật khẩu sẽ gửi **mã OTP qua email thật** để đặt lại mật khẩu — không phải mô phỏng. Hệ thống cũng hỗ trợ **đăng nhập bằng Google**." |
+| 8 | 4:45–5:10 | Thu nhỏ cửa sổ / F12 chế độ điện thoại: bấm **☰** mở menu trượt, chọn 1 mục. | "Giao diện **responsive chuẩn di động**: menu thu thành dạng trượt, thao tác chạm mượt mà." |
+| 9 | 5:10–6:00 | Chuyển sang **Postman**: chạy **Đăng nhập → Tạo Workspace → Tạo Task**; quay lại web reload thấy task vừa tạo. | "Về phía API, toàn bộ kịch bản nằm trong file Postman. Mình chạy lần lượt đăng nhập, tạo workspace, tạo công việc — và dữ liệu tạo từ API hiển thị ngay trên web, chứng tỏ back-end và giao diện thống nhất một nguồn dữ liệu." |
+| 10 | 6:00–6:30 | Mở **GitHub repo**: lướt cấu trúc thư mục; mở **Insights → Contributors**. | "Mã nguồn công khai trên GitHub, kiến trúc phân lớp rõ ràng: Controller, Service, Models–Data, Views. Phần Contributors thể hiện đóng góp của các thành viên." |
+| 11 | 6:30–6:50 | Quay lại trang chủ `cetee.cloud`, để logo chính giữa. | "Cetee là hệ thống quản lý công việc **hoàn chỉnh và đã chạy thật**, từ giao diện đến API. Cảm ơn thầy/cô và các bạn đã theo dõi!" |
+
+## ✂️ Mẹo quay & hậu kỳ
+- **Quay từng cảnh ngắn** rồi ghép — lỗi cảnh nào quay lại cảnh đó, đỡ áp lực.
+- Di chuột **chậm**, dừng 1 nhịp trước khi bấm để người xem kịp thấy.
+- Khi nói tới chi tiết nào thì **trỏ chuột/khoanh vùng** đúng chỗ đó.
+- Có thể thêm **tiêu đề cảnh** (text overlay) ở mỗi phần: "1. Quản lý công việc", "2. Kiểm thử API", "3. Mã nguồn".
+- Nhạc nền nhẹ, âm lượng nhỏ (-20dB) để không át lời thoại.
+- Xuất video **MP4 1080p**; kiểm tra lại tiếng rõ và không lộ thông tin nhạy cảm (mật khẩu thật, token).
+- ⚠️ Nếu quay phần đăng nhập, **đừng để lộ mật khẩu thật đang gõ** — dùng tài khoản demo `Admin@123` là an toàn.

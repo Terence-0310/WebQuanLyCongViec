@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Cetee.Data;
+using Cetee.Hubs;
 using Cetee.Models;
 using Cetee.ViewModels;
 using TaskStatus = Cetee.Models.TaskStatus;
@@ -31,13 +33,19 @@ public class TaskService : ITaskService
     private readonly AppDbContext _db;
     private readonly INotificationService _notifications;
     private readonly IActivityLogService _activity;
+    private readonly IHubContext<RealtimeHub> _rt;
 
-    public TaskService(AppDbContext db, INotificationService notifications, IActivityLogService activity)
+    public TaskService(AppDbContext db, INotificationService notifications, IActivityLogService activity,
+        IHubContext<RealtimeHub> rt)
     {
         _db = db;
         _notifications = notifications;
         _activity = activity;
+        _rt = rt;
     }
+
+    // Báo cho mọi client đang xem rằng dữ liệu công việc vừa thay đổi (để tự đồng bộ).
+    private Task BroadcastChangedAsync() => _rt.Clients.All.SendAsync("dataChanged", new { kind = "task" });
 
     private IQueryable<TaskItem> Accessible(int userId, bool seeAll)
     {
@@ -140,6 +148,7 @@ public class TaskService : ITaskService
         foreach (var uid in assigneeIds.Where(id => id != userId))
             await _notifications.CreateAsync(uid, $"Bạn được giao task: {task.Title}", task.Id);
 
+        await BroadcastChangedAsync();
         return task;
     }
 
@@ -173,6 +182,7 @@ public class TaskService : ITaskService
         foreach (var uid in newAssignees.Where(id => !previousAssignees.Contains(id)))
             await _notifications.CreateAsync(uid, $"Bạn được giao task: {task.Title}", task.Id);
 
+        await BroadcastChangedAsync();
         return true;
     }
 
@@ -197,6 +207,7 @@ public class TaskService : ITaskService
         int projectId = task.ProjectId;
         _db.Tasks.Remove(task);
         await _db.SaveChangesAsync();
+        await BroadcastChangedAsync();
         return projectId;
     }
 
@@ -211,6 +222,7 @@ public class TaskService : ITaskService
 
         await _activity.LogAsync(userId, "ChangedStatus", "Task", task.Id,
             $"Đổi trạng thái task \"{task.Title}\": {oldStatus.Label()} → {status.Label()}");
+        await BroadcastChangedAsync();
         return true;
     }
 
@@ -361,6 +373,7 @@ public class TaskService : ITaskService
         if (changeStart && start.HasValue)
             await _activity.LogAsync(userId, "Scheduled", "Task", task.Id,
                 $"Xếp lịch task \"{task.Title}\" lúc {start.Value:HH:mm dd/MM} ({task.DurationMinutes} phút)");
+        await BroadcastChangedAsync();
         return true;
     }
 }

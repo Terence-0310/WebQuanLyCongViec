@@ -111,6 +111,20 @@ public class TasksController : BaseController
         return View(model);
     }
 
+    // GET /Tasks/ProjectMembers?projectId= -> JSON thành viên project (để form tạo task
+    // hiện ngay danh sách người thực hiện khi chọn project, không cần lưu trước).
+    [HttpGet]
+    public async Task<IActionResult> ProjectMembers(int projectId)
+    {
+        if (projectId <= 0) return Json(Array.Empty<object>());
+        var accessible = await _tasks.GetAccessibleProjectsAsync(CurrentUserId, CanSeeAllData);
+        if (!CanSeeAllData && accessible.All(p => p.Id != projectId))
+            return Json(Array.Empty<object>());
+
+        var members = await _tasks.GetProjectMembersAsync(projectId);
+        return Json(members.Select(u => new { id = u.Id, name = u.FullName }));
+    }
+
     [HttpGet]
     public async Task<IActionResult> Create(int? projectId)
     {

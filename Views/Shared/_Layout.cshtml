@@ -24,6 +24,11 @@
         "Pages" => "Tài liệu",
         _ => "Cetee"
     };
+
+    // Trang dạng xem dữ liệu (bảng/lịch/dashboard/chi tiết) thì tự tải lại khi có thay đổi realtime.
+    bool rtReload = string.Equals(controller, "Tasks", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(controller, "Dashboard", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(action, "Details", StringComparison.OrdinalIgnoreCase);
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -70,7 +75,7 @@
                     <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     <span class="nav-label">Lịch</span>
                 </a>
-                <a class="nav-item @Active("Notifications")" asp-controller="Notifications" asp-action="Index">
+                <a class="nav-item @Active("Notifications")" data-notif asp-controller="Notifications" asp-action="Index">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
                     <span class="nav-label">Notifications</span>
                     @await Component.InvokeAsync("NotificationBadge")
@@ -115,7 +120,7 @@
                 </form>
                 <div class="topbar-actions">
                     @RenderSection("TopbarAction", required: false)
-                    <a class="icon-btn" asp-controller="Notifications" asp-action="Index" title="Thông báo">
+                    <a class="icon-btn" data-notif asp-controller="Notifications" asp-action="Index" title="Thông báo">
                         <svg class="icon" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
                         @await Component.InvokeAsync("NotificationBadge")
                     </a>
@@ -172,6 +177,48 @@
                 if (!window.confirm('Bạn có chắc muốn thực hiện thao tác này?')) e.preventDefault();
             }
         });
+    })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@@8.0.7/dist/browser/signalr.min.js"></script>
+    <script>
+    (function () {
+        if (!window.signalR) return;
+        var stack = document.getElementById('toastStack');
+        var autoReload = @(rtReload ? "true" : "false");
+
+        function showToast(msg, kind) {
+            if (!stack) return;
+            var t = document.createElement('div');
+            t.className = 'toast toast-' + (kind || 'info');
+            var s = document.createElement('span'); s.textContent = msg;
+            var x = document.createElement('button'); x.type = 'button'; x.className = 'toast-x'; x.innerHTML = '&times;';
+            t.appendChild(s); t.appendChild(x);
+            var hide = function () { t.classList.add('toast-hide'); setTimeout(function () { t.remove(); }, 300); };
+            x.addEventListener('click', hide);
+            stack.appendChild(t); setTimeout(hide, 4500);
+        }
+        function setNotif(n) {
+            document.querySelectorAll('[data-notif]').forEach(function (link) {
+                var b = link.querySelector('.count-badge');
+                if (n > 0) {
+                    if (!b) { b = document.createElement('span'); b.className = 'count-badge'; link.appendChild(b); }
+                    b.textContent = n > 99 ? '99+' : n;
+                } else if (b) { b.remove(); }
+            });
+        }
+
+        var conn = new signalR.HubConnectionBuilder().withUrl('/hubs/realtime').withAutomaticReconnect().build();
+        conn.on('notify', function (p) {
+            if (p && typeof p.unread === 'number') setNotif(p.unread);
+            showToast((p && p.message) || 'Bạn có thông báo mới', 'success');
+        });
+        conn.on('dataChanged', function () {
+            if (!autoReload) return;
+            showToast('Dữ liệu vừa được cập nhật — đang tải lại…', 'info');
+            clearTimeout(window.__rtT);
+            window.__rtT = setTimeout(function () { location.reload(); }, 1200);
+        });
+        conn.start().catch(function () { /* không kết nối được thì im lặng, không ảnh hưởng trang */ });
     })();
     </script>
 }

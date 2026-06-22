@@ -113,7 +113,7 @@
         </div>
 
         <div class="cal-scroll">
-            <div class="cal" data-date="@dateIso" data-hourh="@HourH" data-winstart="@winStart">
+            <div class="cal" data-date="@dateIso" data-hourh="@HourH" data-winstart="@winStart" data-nowmin="@(nowMin?.ToString() ?? "")">
                 <div class="cal-hours">
                     @for (int h = startHour; h < endHour; h++)
                     {
@@ -121,9 +121,9 @@
                     }
                 </div>
                 <div class="cal-grid" id="grid" style="height:@(gridHeight)px;">
-                    @if (nowTop.HasValue)
+                    @if (nowMin.HasValue)
                     {
-                        <div class="cal-now" id="nowline" style="top:@(nowTop.Value)px;"></div>
+                        <div class="cal-now" id="nowline" style="top:@(nowTop ?? 0)px;@(nowTop.HasValue ? "" : "display:none;")"></div>
                     }
                     <div class="cal-guide" id="guide"><span class="cal-guide-label" id="guideLabel"></span></div>
                     @foreach (var e in events)
@@ -374,6 +374,24 @@
             });
             backdrop.addEventListener('click', closeEditor);
             document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeEditor(); });
+
+            // Vạch "bây giờ" chạy theo thời gian thực (tính theo thời gian đã trôi từ lúc tải trang
+            // nên không lệ thuộc múi giờ trình duyệt — luôn khớp với vị trí server vẽ ban đầu).
+            (function () {
+                const nowEl = document.getElementById('nowline');
+                const nowMin0 = cal.getAttribute('data-nowmin');
+                if (!nowEl || nowMin0 === '') return;
+                const base = parseInt(nowMin0, 10);
+                const t0 = Date.now();
+                function tickNow() {
+                    const cur = base + (Date.now() - t0) / 60000;
+                    const top = Px(cur - WIN_START);
+                    if (top < 0 || top > grid.offsetHeight) { nowEl.style.display = 'none'; }
+                    else { nowEl.style.display = 'block'; nowEl.style.top = top + 'px'; }
+                }
+                tickNow();
+                setInterval(tickNow, 20000);
+            })();
 
             // Sau khi tải lại do thao tác: khôi phục vị trí cuộn (không nhảy).
             const savedY = sessionStorage.getItem('cal-scrollY');

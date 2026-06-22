@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Cetee.Data;
+using Cetee.Hubs;
 using Cetee.Models;
 using Cetee.Services;
 
@@ -75,6 +76,7 @@ builder.Services.AddSingleton<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR(); // Realtime (WebSocket) — đẩy thông báo & đồng bộ dữ liệu.
 
 // Khi chạy sau reverse proxy (nginx/Cloudflare): tin header X-Forwarded-Proto/For
 // để app biết request gốc là HTTPS (cần cho redirect URI Google OAuth, cookie Secure...).
@@ -113,5 +115,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHub<RealtimeHub>("/hubs/realtime");
 
 app.Run();

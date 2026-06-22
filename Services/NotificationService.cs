@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Cetee.Data;
+using Cetee.Hubs;
 using Cetee.Models;
 
 namespace Cetee.Services;
@@ -17,8 +19,13 @@ public interface INotificationService
 public class NotificationService : INotificationService
 {
     private readonly AppDbContext _db;
+    private readonly IHubContext<RealtimeHub> _rt;
 
-    public NotificationService(AppDbContext db) => _db = db;
+    public NotificationService(AppDbContext db, IHubContext<RealtimeHub> rt)
+    {
+        _db = db;
+        _rt = rt;
+    }
 
     public async Task CreateAsync(int userId, string message, int? taskItemId = null)
     {
@@ -29,6 +36,10 @@ public class NotificationService : INotificationService
             TaskItemId = taskItemId
         });
         await _db.SaveChangesAsync();
+
+        // Đẩy realtime tới đúng người nhận: cập nhật badge + hiện toast ngay.
+        var unread = await GetUnreadCountAsync(userId);
+        await _rt.Clients.User(userId.ToString()).SendAsync("notify", new { message, unread });
     }
 
     public Task<List<Notification>> GetForUserAsync(int userId) =>
