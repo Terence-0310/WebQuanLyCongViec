@@ -25,8 +25,15 @@
                 <a href="#why">Vì sao Cetee</a>
             </nav>
             <div class="lp-nav-actions">
-                <a class="btn btn-ghost" asp-controller="Account" asp-action="Login">Đăng nhập</a>
-                <a class="btn btn-primary" href="#" data-trial>Dùng thử miễn phí</a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a class="btn btn-primary" asp-controller="Home" asp-action="App">Vào ứng dụng</a>
+                }
+                else
+                {
+                    <a class="btn btn-ghost" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                    <a class="btn btn-primary" href="#" data-trial>Dùng thử miễn phí</a>
+                }
             </div>
         </div>
     </header>
@@ -41,7 +48,14 @@
                 <p>Cetee hợp nhất workspace, dự án, bảng Kanban và lịch tiến độ vào một nền tảng duy nhất —
                     để cả đội luôn biết việc gì cần làm, ai phụ trách và khi nào hoàn thành.</p>
                 <div class="lp-hero-cta">
-                    <a class="btn btn-primary btn-lg" href="#" data-trial>Dùng thử miễn phí</a>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a class="btn btn-primary btn-lg" asp-controller="Home" asp-action="App">Vào ứng dụng</a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-primary btn-lg" href="#" data-trial>Dùng thử miễn phí</a>
+                    }
                     <a class="btn btn-secondary btn-lg" href="#features">Khám phá tính năng</a>
                 </div>
                 <div class="lp-trust">

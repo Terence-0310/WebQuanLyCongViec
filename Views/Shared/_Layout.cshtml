@@ -11,6 +11,19 @@
     var calendarActions = new[] { "Timeline", "Week", "Month" };
     bool isCalendar = isTasks && calendarActions.Contains(action, StringComparer.OrdinalIgnoreCase);
     string Active(string name) => string.Equals(controller, name, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+
+    // Nhãn ngữ cảnh hiển thị phía trên tiêu đề trang (giúp điều hướng rõ ràng).
+    string sectionLabel = isCalendar ? "Lịch" : controller switch
+    {
+        "Dashboard" => "Tổng quan",
+        "Workspaces" => "Không gian làm việc",
+        "Projects" => "Dự án",
+        "Tasks" => "Công việc",
+        "Notifications" => "Thông báo",
+        "Users" => "Quản trị người dùng",
+        "Pages" => "Tài liệu",
+        _ => "Cetee"
+    };
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -85,10 +98,17 @@
                 </form>
             </div>
         </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <div class="main">
             <header class="topbar">
-                <h1 class="topbar-title">@ViewData["Title"]</h1>
+                <button type="button" class="nav-toggle" id="navToggle" aria-label="Mở menu">
+                    <svg class="icon" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <div class="topbar-heading">
+                    <span class="topbar-eyebrow">@sectionLabel</span>
+                    <h1 class="topbar-title">@ViewData["Title"]</h1>
+                </div>
                 <form class="topbar-search" method="get" asp-controller="Tasks" asp-action="Index">
                     <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     <input type="text" name="q" placeholder="Tìm công việc theo tên..." />
@@ -109,11 +129,51 @@
                 </div>
             </header>
 
+            <div class="toast-stack" id="toastStack">
+                @if (TempData["Success"] is string fs) { <div class="toast toast-success"><span>@fs</span><button type="button" class="toast-x" aria-label="Đóng">&times;</button></div> }
+                @if (TempData["Info"] is string fi) { <div class="toast toast-info"><span>@fi</span><button type="button" class="toast-x" aria-label="Đóng">&times;</button></div> }
+                @if (TempData["Error"] is string fe) { <div class="toast toast-error"><span>@fe</span><button type="button" class="toast-x" aria-label="Đóng">&times;</button></div> }
+            </div>
+
             <main class="content">
                 @RenderBody()
             </main>
         </div>
     </div>
+    <script>
+    (function () {
+        var shell = document.querySelector('.app-shell');
+        var toggle = document.getElementById('navToggle');
+        var overlay = document.getElementById('sidebarOverlay');
+        if (!shell || !toggle) return;
+        var close = function () { shell.classList.remove('nav-open'); };
+        toggle.addEventListener('click', function () { shell.classList.toggle('nav-open'); });
+        if (overlay) overlay.addEventListener('click', close);
+        shell.querySelectorAll('.sidebar .nav-item, .sidebar-brand').forEach(function (a) {
+            a.addEventListener('click', function () { if (window.innerWidth <= 760) close(); });
+        });
+        window.addEventListener('resize', function () { if (window.innerWidth > 760) close(); });
+
+        // Toast: nút đóng + tự ẩn sau 4.5s
+        document.querySelectorAll('#toastStack .toast').forEach(function (t) {
+            var hide = function () { t.classList.add('toast-hide'); setTimeout(function () { t.remove(); }, 300); };
+            var x = t.querySelector('.toast-x');
+            if (x) x.addEventListener('click', hide);
+            setTimeout(hide, 4500);
+        });
+
+        // Xác nhận trước thao tác xóa/gỡ (toàn cục) — dựa trên chữ nút submit
+        document.addEventListener('submit', function (e) {
+            var f = e.target;
+            if (!f || f.dataset.noConfirm) return;
+            var btn = f.querySelector('[type=submit]');
+            var txt = ((btn && btn.textContent) || '').trim().toLowerCase();
+            if (f.classList.contains('js-confirm') || /xóa|xoá|gỡ|delete|remove/.test(txt)) {
+                if (!window.confirm('Bạn có chắc muốn thực hiện thao tác này?')) e.preventDefault();
+            }
+        });
+    })();
+    </script>
 }
 else
 {

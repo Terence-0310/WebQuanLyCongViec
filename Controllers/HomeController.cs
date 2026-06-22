@@ -7,14 +7,17 @@ namespace Cetee.Controllers;
 
 public class HomeController : Controller
 {
-    // Trang gốc:
-    //  - Chưa đăng nhập            -> Landing page giới thiệu sản phẩm (cho khách xem trước).
-    //  - SuperAdmin / Admin        -> Dashboard (chỉ hai vai trò này được xem).
-    //  - Manager / User (& độc lập) -> Workspaces (khu làm việc của họ).
-    public IActionResult Index()
+    // Trang chủ (landing) — luôn hiển thị cho cả khách lẫn người đã đăng nhập,
+    // để bấm logo ở bất kỳ trang nào cũng quay về được trang chủ.
+    public IActionResult Index() => View();
+
+    // "Vào ứng dụng": điều hướng theo vai trò (dùng sau đăng nhập và cho nút trên landing).
+    //  - SuperAdmin / Admin         -> Dashboard
+    //  - Manager / User (& độc lập) -> Workspaces
+    public IActionResult App()
     {
         if (User.Identity?.IsAuthenticated != true)
-            return View(); // Landing page công khai.
+            return RedirectToAction(nameof(Index));
 
         var role = User.FindFirstValue(ClaimTypes.Role);
         return Roles.CanAccessDashboard(role)

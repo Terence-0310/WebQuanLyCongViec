@@ -42,7 +42,7 @@ public class AccountController : Controller
     public IActionResult Login(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("App", "Home");
 
         return View(new LoginViewModel { ReturnUrl = returnUrl });
     }
@@ -63,7 +63,7 @@ public class AccountController : Controller
             {
                 var url = (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
                     ? model.ReturnUrl
-                    : Url.Action("Index", "Home")!;
+                    : Url.Action("App", "Home")!;
                 return IsAjax ? Json(new { ok = true, redirect = url }) : Redirect(url);
             }
         }
@@ -80,7 +80,7 @@ public class AccountController : Controller
     public async Task<IActionResult> Trial()
     {
         if (User.Identity?.IsAuthenticated == true)
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("App", "Home");
 
         var user = await _auth.CreateTrialAsync();
         await _signInManager.SignInAsync(user, isPersistent: true);
@@ -92,7 +92,7 @@ public class AccountController : Controller
     public IActionResult Register()
     {
         if (User.Identity?.IsAuthenticated == true)
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("App", "Home");
 
         return View(new RegisterViewModel());
     }
@@ -113,7 +113,7 @@ public class AccountController : Controller
         }
 
         await _signInManager.SignInAsync(user!, isPersistent: true);
-        var url = Url.Action("Index", "Home")!;
+        var url = Url.Action("App", "Home")!;
         return IsAjax ? Json(new { ok = true, redirect = url }) : Redirect(url);
     }
 
@@ -174,7 +174,7 @@ public class AccountController : Controller
 
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction("App", "Home");
     }
 
     // ---------------------------------------------------------------------

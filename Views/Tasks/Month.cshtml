@@ -62,7 +62,7 @@
                     }
                     @if (day.Total > 3)
                     {
-                        <span class="mc-more">+@(day.Total - 3) việc khác</span>
+                        <a class="mc-more" asp-action="Timeline" asp-route-date="@day.Date.ToString("yyyy-MM-dd")" asp-route-employeeId="@emp">+@(day.Total - 3) việc khác</a>
                     }
                 </div>
             </div>
