@@ -69,20 +69,16 @@
     </div>
 }
 
-<div class="page-head">
-    <h2>Lịch ngày</h2>
-    <div class="sub">Lịch trình trong ngày của bạn. Kéo khối để đổi giờ (mốc 30 phút); kéo mép dưới để đổi thời lượng.</div>
-</div>
-
 @{
     var empId = ViewContext.HttpContext.Request.Query["employeeId"].ToString();
     var curIso = Model.Date.ToString("yyyy-MM-dd");
 }
-<div class="cal-tabs mb-2">
+<div class="cal-tabs mb-1">
     <a class="cal-tab active" asp-action="Timeline" asp-route-date="@curIso" asp-route-employeeId="@empId">Ngày</a>
     <a class="cal-tab" asp-action="Week" asp-route-date="@curIso" asp-route-employeeId="@empId">Tuần</a>
     <a class="cal-tab" asp-action="Month" asp-route-date="@curIso" asp-route-employeeId="@empId">Tháng</a>
 </div>
+<p class="muted text-sm" style="margin: 8px 2px 16px;">Kéo khối để đổi giờ (mốc 30 phút); kéo mép dưới để đổi thời lượng.</p>
 
 <div class="card mb-2">
     <div class="card-body" style="display:flex; align-items:center; justify-content:space-between;">

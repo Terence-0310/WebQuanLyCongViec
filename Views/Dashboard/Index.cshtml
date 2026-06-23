@@ -24,10 +24,7 @@
     </div>
 }
 
-<div class="page-head">
-    <h2>Dashboard</h2>
-    <div class="sub">@(viewingName != null ? $"Thống kê công việc của {viewingName}" : "Tổng quan công việc hôm nay")</div>
-</div>
+<p class="muted text-sm" style="margin: 0 2px 18px;">@(viewingName != null ? $"Thống kê công việc của {viewingName}" : "Tổng quan công việc hôm nay")</p>
 
 <!-- Thẻ thống kê -->
 <div class="grid grid-4 mb-2">
