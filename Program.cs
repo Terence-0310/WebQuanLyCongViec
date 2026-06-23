@@ -98,6 +98,10 @@ using (var scope = app.Services.CreateScope())
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
     await DbSeeder.SeedAsync(db, roleManager, userManager);
+
+    // Dọn các tài khoản dùng thử bị bỏ quên (>1 ngày) — tránh tích tụ dữ liệu rác.
+    var auth = scope.ServiceProvider.GetRequiredService<IAuthService>();
+    await auth.CleanupStaleTrialsAsync();
 }
 
 if (!app.Environment.IsDevelopment())

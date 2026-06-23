@@ -8,6 +8,10 @@
     <div class="page-actions">
         <a class="btn btn-secondary" asp-action="Edit" asp-route-id="@p.Id">Sửa project</a>
         <a class="btn btn-primary" asp-controller="Tasks" asp-action="Create" asp-route-projectId="@p.Id">Thêm task</a>
+        <form class="inline-form js-confirm" asp-action="Delete" asp-route-id="@p.Id" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger">Xóa project</button>
+        </form>
     </div>
 }
 

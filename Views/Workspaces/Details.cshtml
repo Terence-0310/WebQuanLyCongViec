@@ -12,6 +12,13 @@
             <a class="btn btn-secondary" asp-action="Edit" asp-route-id="@ws.Id">Sửa workspace</a>
         }
         <a class="btn btn-primary" asp-controller="Projects" asp-action="Create" asp-route-workspaceId="@ws.Id">Thêm project</a>
+        @if (canEditWs)
+        {
+            <form class="inline-form js-confirm" asp-action="Delete" asp-route-id="@ws.Id" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger">Xóa workspace</button>
+            </form>
+        }
     </div>
 }
 

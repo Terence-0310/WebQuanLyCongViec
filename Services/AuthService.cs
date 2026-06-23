@@ -17,6 +17,13 @@ public interface IAuthService
 
     /// <summary>Tạo tài khoản DÙNG THỬ tức thì (cá nhân) kèm dữ liệu mẫu để khám phá ngay.</summary>
     Task<User> CreateTrialAsync();
+
+    /// <summary>Xóa sạch một tài khoản dùng thử + toàn bộ dữ liệu của nó (gọi khi đăng xuất).
+    /// Không làm gì nếu user không phải tài khoản dùng thử.</summary>
+    Task DeleteTrialAsync(int userId);
+
+    /// <summary>Dọn các tài khoản dùng thử bị bỏ quên (tạo quá 1 ngày) — gọi khi app khởi động.</summary>
+    Task CleanupStaleTrialsAsync();
 }
 
 /// <summary>Nghiệp vụ đăng ký tài khoản và tạo tài khoản đăng nhập ngoài (qua Identity UserManager).</summary>
@@ -81,8 +88,8 @@ public class AuthService : IAuthService
 
     public async Task<User> CreateTrialAsync()
     {
+        // Mỗi khách thử có sandbox RIÊNG (email trial-...@cetee.demo), sẽ tự xóa khi đăng xuất.
         var userRole = await _db.Roles.FirstAsync(r => r.Name == Roles.User);
-
         var suffix = Guid.NewGuid().ToString("N")[..8];
         var email = $"trial-{suffix}@cetee.demo";
         var user = new User
@@ -92,9 +99,9 @@ public class AuthService : IAuthService
             UserName = email,
             EmailConfirmed = true,
             RoleId = userRole.Id,
-            AccountType = AccountType.Personal
+            AccountType = AccountType.Personal,
+            CreatedAt = DateTime.UtcNow
         };
-        // Mật khẩu ngẫu nhiên mạnh (tài khoản dùng thử không dùng để đăng nhập lại thủ công).
         var result = await _userManager.CreateAsync(user, "Trial@" + Guid.NewGuid().ToString("N")[..10]);
         if (!result.Succeeded)
             throw new InvalidOperationException("Không tạo được tài khoản dùng thử: " +
@@ -141,5 +148,44 @@ public class AuthService : IAuthService
         _db.Workspaces.Add(ws);
         await _db.SaveChangesAsync();
         return user;
+    }
+
+    private static bool IsTrial(User u) =>
+        !string.IsNullOrEmpty(u.Email) && u.Email.StartsWith("trial-") && u.Email.EndsWith("@cetee.demo");
+
+    public async Task DeleteTrialAsync(int userId)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null || !IsTrial(user)) return; // chỉ xóa tài khoản dùng thử
+
+        // Xóa workspace user sở hữu -> cascade project/page/task/assignee/comment/member.
+        var owned = await _db.Workspaces.Where(w => w.OwnerId == userId).ToListAsync();
+        if (owned.Count > 0)
+        {
+            _db.Workspaces.RemoveRange(owned);
+            await _db.SaveChangesAsync();
+        }
+
+        // Gỡ mọi tham chiếu Restrict còn sót tới user (an toàn) trước khi xóa user.
+        await _db.TaskAssignees.Where(a => a.UserId == userId).ExecuteDeleteAsync();
+        await _db.TaskComments.Where(c => c.UserId == userId).ExecuteDeleteAsync();
+        await _db.WorkspaceMembers.Where(m => m.UserId == userId).ExecuteDeleteAsync();
+        await _db.ProjectMembers.Where(m => m.UserId == userId).ExecuteDeleteAsync();
+
+        // Xóa user -> cascade notification, activity log, password reset code.
+        _db.Users.Remove(user);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task CleanupStaleTrialsAsync()
+    {
+        var cutoff = DateTime.UtcNow.AddDays(-1);
+        var ids = await _db.Users
+            .Where(u => u.Email != null && u.Email.StartsWith("trial-") && u.Email.EndsWith("@cetee.demo")
+                        && u.CreatedAt < cutoff)
+            .Select(u => u.Id)
+            .ToListAsync();
+        foreach (var id in ids)
+            await DeleteTrialAsync(id);
     }
 }

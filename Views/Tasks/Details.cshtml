@@ -7,10 +7,9 @@
 @section TopbarAction {
     <div class="page-actions">
         <a class="btn btn-secondary" asp-action="Edit" asp-route-id="@t.Id">Sửa</a>
-        <form class="inline-form" asp-action="Delete" asp-route-id="@t.Id" method="post"
-              onsubmit="return confirm('Xóa task này?');">
+        <form class="inline-form js-confirm" asp-action="Delete" asp-route-id="@t.Id" method="post">
             @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-danger">Xóa</button>
+            <button type="submit" class="btn btn-danger">Xóa task</button>
         </form>
     </div>
 }

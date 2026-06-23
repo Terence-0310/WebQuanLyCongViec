@@ -121,7 +121,11 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
+        // Nếu là tài khoản dùng thử -> xóa sạch sau khi đăng xuất (không để lại dữ liệu rác).
+        var idStr = _userManager.GetUserId(User);
         await _signInManager.SignOutAsync();
+        if (int.TryParse(idStr, out var uid))
+            await _auth.DeleteTrialAsync(uid);
         return RedirectToAction("Login");
     }
 

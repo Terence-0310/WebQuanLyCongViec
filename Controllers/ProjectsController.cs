@@ -118,6 +118,7 @@ public class ProjectsController : BaseController
     public async Task<IActionResult> Delete(int id)
     {
         await _projects.DeleteAsync(id, CurrentUserId, CanSeeAllData);
+        TempData["Success"] = "Đã xóa project.";
         return RedirectToAction(nameof(Index));
     }
 

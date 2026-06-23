@@ -83,6 +83,7 @@ public class WorkspacesController : BaseController
     public async Task<IActionResult> Delete(int id)
     {
         await _workspaces.DeleteAsync(id, CurrentUserId, CanSeeAllData);
+        TempData["Success"] = "Đã xóa workspace.";
         return RedirectToAction(nameof(Index));
     }
 

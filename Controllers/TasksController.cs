@@ -199,6 +199,7 @@ public class TasksController : BaseController
     public async Task<IActionResult> Delete(int id)
     {
         await _tasks.DeleteAsync(id, CurrentUserId, CanSeeAllData);
+        TempData["Success"] = "Đã xóa task.";
         return RedirectToAction(nameof(Index));
     }
 
